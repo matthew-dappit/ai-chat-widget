@@ -13,11 +13,12 @@ from pathlib import Path
 
 # Configuration
 PORT = 8000
-DEV_DIR = Path(__file__).parent
+# Serve from repo root so we can access /dev and /dist together
+ROOT_DIR = Path(__file__).parent.parent
 
 class DevServerHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(DEV_DIR), **kwargs)
+        super().__init__(*args, directory=str(ROOT_DIR), **kwargs)
     
     def end_headers(self):
         # Add CORS headers for development
@@ -35,14 +36,14 @@ def main():
             local_url = f"http://localhost:{PORT}"
             
             print(f"✅ Server running at: {local_url}")
-            print(f"📁 Serving files from: {DEV_DIR}")
+            print(f"📁 Serving files from: {ROOT_DIR}")
             print(f"🌐 Share this URL with colleagues for testing")
             print(f"🔄 Press Ctrl+C to stop the server")
             print()
             
             # Try to open browser automatically
             try:
-                webbrowser.open(local_url)
+                webbrowser.open(f"{local_url}/dev/index.html")
                 print("🚀 Opening browser...")
             except:
                 print("💡 Open your browser and navigate to the URL above")

@@ -16,8 +16,9 @@ accelerationMax:3,keyboardSupport:!0,arrowScroll:50,fixedBackground:!0,excluded:
 <!-- AI Chat Widget -->
 <script>
 (function () {
-  var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.1/dist/chat-widget.js";
-  var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.1/dist/chat-widget.css";
+  // Updated to version including lifecycle events and markdown rendering
+  var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.3/dist/chat-widget.js";
+  var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.3/dist/chat-widget.css";
   function ready(fn){/in/.test(document.readyState)?setTimeout(function(){ready(fn)},9):fn()}
   function load(src, onload){
     var s=document.createElement("script"); s.src=src; s.async=true; s.onload=onload;
@@ -29,18 +30,27 @@ accelerationMax:3,keyboardSupport:!0,arrowScroll:50,fixedBackground:!0,excluded:
     btn.id="ai-chat-launcher";
     btn.type="button";
     btn.setAttribute("aria-label","Open AI chat");
-    btn.style.cssText="position:fixed;left:16px;bottom:16px;z-index:2147483647;padding:12px 14px;border-radius:9999px;border:0;cursor:pointer";
-    btn.textContent="Chat";
+    btn.style.cssText="position:fixed;left:16px;bottom:16px;z-index:2147483647;padding:12px 14px;border-radius:9999px;border:0;cursor:pointer;background:#4a5d23;color:#fff;font-weight:600;box-shadow:0 4px 16px rgba(74,93,35,0.3)";
+    btn.textContent = "💬 Support Chat";
     document.body.appendChild(btn);
 
+    // Hide on open, show on close
+    window.addEventListener('ai-chat:open', function(){ btn.style.display = 'none'; });
+    window.addEventListener('ai-chat:close', function(){ btn.style.display = ''; });
+
     btn.addEventListener("click", function(){
-      if (!window.AIChatWidget) {
-        load(JS, function(){
-          window.AIChatWidget.loadCSS(CSS);
-          window.AIChatWidget.mountChat({ backendUrl: "https://your-api.example.com/chat" });
+      // Optional immediate hide for responsiveness
+      btn.style.display = 'none';
+      function openChat() {
+        window.AIChatWidget.loadCSS(CSS);
+        window.AIChatWidget.mountChat({
+          endpointUrl: "https://api.robethood.net/api:zwntye2i/ai_chats/website/matchi"
         });
+      }
+      if (!window.AIChatWidget) {
+        load(JS, openChat);
       } else {
-        window.AIChatWidget.mountChat({ backendUrl: "https://your-api.example.com/chat" });
+        openChat();
       }
     });
   });
