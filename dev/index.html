@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robethood - Support Chat Testing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            padding: 16px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1000;
+        }
+        
+        .nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+        
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #f4a261, #e76f51);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 16px;
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        
+        .nav-links a:hover {
+            color: #333;
+        }
+        
+        .cta-button {
+            background: #4a5d23;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .cta-button:hover {
+            background: #3a4a1c;
+        }
+        
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            min-height: 70vh;
+        }
+        
+        .content-left h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        
+        .content-left h1 .highlight {
+            color: #f4a261;
+        }
+        
+        .content-left h1 .dark {
+            color: #2d3748;
+        }
+        
+        .content-left p {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.7;
+        }
+        
+        .earn-button {
+            background: #2d3748;
+            color: white;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .earn-button:hover {
+            background: #1a202c;
+        }
+        
+        .content-right {
+            position: relative;
+        }
+        
+        .people-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            transform: rotate(15deg);
+        }
+        
+        .person {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
+            border: 3px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #666;
+        }
+        
+        /* Trust indicators */
+        .trust-section {
+            text-align: center;
+            padding: 40px 20px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .trust-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .trustpilot {
+            margin-bottom: 30px;
+        }
+        
+        .stars {
+            color: #00b67a;
+            font-size: 20px;
+            margin: 0 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 30px;
+        }
+        
+        .stat {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .stat h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat p {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+        
+        /* Development notice */
+        .dev-notice {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #4299e1;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+            z-index: 10000;
+        }
+        
+        .dev-notice + .header {
+            margin-top: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+                text-align: center;
+            }
+            
+            .content-left h1 {
+                font-size: 36px;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dev-notice">
+        � Development Environment - AI Support Chat Testing
+    </div>
+    
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">RH</div>
+            <ul class="nav-links">
+                <li><a href="#offers">Offers (4)</a></li>
+                <li><a href="#feedback">Participant feedback</a></li>
+                <li><a href="#over">Over</a></li>
+                <li><a href="#affiliates">Affiliates</a></li>
+                <li><a href="#legal">Legal</a></li>
+                <li><a href="#shop">Shop</a></li>
+                <li><a href="#blog">Blog</a></li>
+                <li><a href="#press">Press</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+            <a href="#" class="cta-button">500 € FREE</a>
+        </nav>
+    </header>
+    
+    <main class="main-content">
+        <div class="content-left">
+            <p style="color: #f4a261; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;">ROBETHOOD® BETTING POOLS</p>
+            <h1>
+                <span class="highlight">Earn money online</span><br>
+                <span class="highlight">without any</span><br>
+                <span class="dark">experience</span>
+            </h1>
+            <p>
+                Benefit from what is arguably the world's safest sports betting 
+                community and earn money online, regardless of location and 
+                without any prior knowledge required. Nine years online, 10,000s 
+                of success stories, legally audited and proven.
+            </p>
+            <button class="earn-button">EARN MONEY NOW</button>
+        </div>
+        
+        <div class="content-right">
+            <div class="people-grid">
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+                <div class="person">👤</div>
+            </div>
+        </div>
+    </main>
+    
+    <section class="trust-section">
+        <div class="trust-content">
+            <div class="trustpilot">
+                <span style="font-weight: 600;">Rating: Excellent</span>
+                <span class="stars">★★★★★</span>
+                <span style="font-weight: 600;">1.9K+ Reviews</span>
+                <span style="color: #00b67a; font-weight: 600; margin-left: 10px;">🛡️ Trustpilot</span>
+            </div>
+            
+            <div class="stats">
+                <div class="stat">
+                    <h3>Winnings for all players</h3>
+                    <p>6.421.878€</p>
+                </div>
+                <div class="stat">
+                    <h3>Provision go Affiliates</h3>
+                    <p>1.907.690€</p>
+                </div>
+                <div class="stat">
+                    <h3>Bet amount/year</h3>
+                    <p>>40 million €</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Chat Widget Integration -->
+    <script>
+    (function () {
+      var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.1/dist/chat-widget.js";
+      var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.1/dist/chat-widget.css";
+      function ready(fn){/in/.test(document.readyState)?setTimeout(function(){ready(fn)},9):fn()}
+      function load(src, onload){
+        var s=document.createElement("script"); s.src=src; s.async=true; s.onload=onload;
+        document.head.appendChild(s);
+      }
+      ready(function(){
+        // Floating button - styled to match Robethood
+        var btn=document.createElement("button");
+        btn.id="ai-chat-launcher";
+        btn.type="button";
+        btn.setAttribute("aria-label","Open support chat");
+        btn.style.cssText="position:fixed;left:20px;bottom:20px;z-index:2147483647;padding:16px 20px;border-radius:50px;border:0;cursor:pointer;background:#4a5d23;color:white;font-weight:600;box-shadow:0 4px 16px rgba(74,93,35,0.3);transition:all 0.3s ease;font-size:14px;";
+        btn.innerHTML = "💬 Support Chat";
+        
+        // Hover effects
+        btn.addEventListener("mouseenter", function() {
+          btn.style.transform = "scale(1.05) translateY(-2px)";
+          btn.style.boxShadow = "0 8px 24px rgba(74,93,35,0.4)";
+        });
+        btn.addEventListener("mouseleave", function() {
+          btn.style.transform = "scale(1) translateY(0)";
+          btn.style.boxShadow = "0 4px 16px rgba(74,93,35,0.3)";
+        });
+        
+        document.body.appendChild(btn);
+
+        btn.addEventListener("click", function(){
+          if (!window.AIChatWidget) {
+            load(JS, function(){
+              window.AIChatWidget.loadCSS(CSS);
+              window.AIChatWidget.mountChat({ backendUrl: "https://robethood-support-api.example.com/chat" });
+            });
+          } else {
+            window.AIChatWidget.mountChat({ backendUrl: "https://robethood-support-api.example.com/chat" });
+          }
+        });
+      });
+    })();
+    </script>
+</body>
+</html>

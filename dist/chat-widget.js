@@ -44,44 +44,52 @@
 			">×</button>
 		`;
 		
-		// Chat area
-		const chatArea = document.createElement("div");
-		chatArea.style.cssText = `
+		// Centered search bar area
+		const centerArea = document.createElement("div");
+		centerArea.style.cssText = `
 			flex: 1;
-			padding: 16px;
-			overflow-y: auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
 			background: white;
 		`;
-		chatArea.innerHTML = `
-			<div style="color: #666; text-align: center; margin-top: 50px;">
-				Welcome! Type a message below to start chatting.
-			</div>
+        
+		const searchContainer = document.createElement("div");
+		searchContainer.style.cssText = `
+			width: 100%;
+			max-width: 480px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 24px;
 		`;
-		
-		// Input area
-		const inputArea = document.createElement("div");
-		inputArea.style.cssText = `
-			padding: 12px 16px;
-			border-top: 1px solid #eee;
-			background: white;
+        
+		const welcomeText = document.createElement("div");
+		welcomeText.textContent = "Welcome! Type a message below to start chatting.";
+		welcomeText.style.cssText = `
+			color: #666;
+			font-size: 18px;
+			text-align: center;
 		`;
-		
+        
 		const input = document.createElement("input");
 		input.type = "text";
 		input.placeholder = "Type your message...";
 		input.style.cssText = `
 			width: 100%;
-			padding: 8px 12px;
+			padding: 16px 18px;
 			border: 1px solid #ddd;
-			border-radius: 4px;
+			border-radius: 8px;
 			outline: none;
 			box-sizing: border-box;
+			font-size: 16px;
 		`;
-		
-		inputArea.appendChild(input);
+        
+		searchContainer.appendChild(welcomeText);
+		searchContainer.appendChild(input);
+		centerArea.appendChild(searchContainer);
 		root.appendChild(header);
-		root.appendChild(chatArea);
-		root.appendChild(inputArea);
+		root.appendChild(centerArea);
 		document.body.appendChild(root);
 		
 		// Close button functionality
