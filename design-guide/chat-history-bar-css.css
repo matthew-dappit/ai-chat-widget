@@ -1,0 +1,212 @@
+/* Frame 10 */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 48px 24px;
+gap: 14px;
+
+position: absolute;
+width: 247px;
+height: 952px;
+left: 0px;
+top: 72px;
+
+background: #FAF9F8;
+
+
+/* Chat-Verlauf */
+
+width: 199px;
+height: 22px;
+
+/* p1 */
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 140%;
+/* or 22px */
+
+/* Gray 3 */
+color: #7E848C;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Chats */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 4px 6px;
+gap: 4px;
+
+width: 213px;
+height: 28px;
+
+background: #FAF9F8;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Kostenlos 500€ not p... */
+
+width: 173px;
+height: 20px;
+
+/* h3 */
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 16px;
+line-height: 125%;
+/* identical to box height, or 20px */
+
+/* Gray 3 */
+color: #7E848D;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Chats */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 4px 6px;
+gap: 4px;
+
+width: 213px;
+height: 28px;
+
+background: #FAF9F8;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+
+/* Kostenlos 500€ not p... */
+
+width: 173px;
+height: 20px;
+
+/* h3 */
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 16px;
+line-height: 125%;
+/* identical to box height, or 20px */
+
+/* Gray 3 */
+color: #7E848D;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Chats */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 4px 6px;
+gap: 4px;
+
+width: 213px;
+height: 28px;
+
+background: #FAF9F8;
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+
+
+/* Kostenlos 500€ not p... */
+
+width: 173px;
+height: 20px;
+
+/* h3 */
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 16px;
+line-height: 125%;
+/* identical to box height, or 20px */
+
+/* Gray 3 */
+color: #7E848D;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Chats */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 4px 6px;
+gap: 4px;
+
+width: 213px;
+height: 28px;
+
+background: #FAF9F8;
+
+/* Inside auto layout */
+flex: none;
+order: 4;
+flex-grow: 0;
+
+
+/* Kostenlos 500€ not p... */
+
+width: 173px;
+height: 20px;
+
+/* h3 */
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 16px;
+line-height: 125%;
+/* identical to box height, or 20px */
+
+/* Gray 3 */
+color: #7E848D;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;

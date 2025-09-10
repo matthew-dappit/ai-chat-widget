@@ -66,63 +66,226 @@
     // Root overlay
     const root = el(
       "div",
-      `position:fixed;top:0;left:0;width:100vw;height:100vh;background:#fff;z-index:2147483646;display:flex;flex-direction:column;`
+      `position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:2147483646;display:flex;overflow:hidden;`
     );
     root.id = "ai-chat-root";
+    // Prevent page scroll while widget is open — save previous values so we can restore on close
+    const _prevHtmlOverflow = document.documentElement.style.overflow;
+    const _prevBodyOverflow = document.body.style.overflow;
+    try {
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    } catch (_) {}
+    
+    // State management
+    let currentView = 'search'; // 'search' or 'chat'
+    
     // Emit helper
     function emit(name, detail) {
       try { window.dispatchEvent(new CustomEvent(name, { detail })); } catch (_) {}
     }
 
-    // Header
-    const header = el(
-      "div",
-      `padding:12px 16px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;background:#f8f9fa;`
-    );
-    const title = el("span", "font-weight:600;color:#333;", "AI Chat");
-    const closeBtn = el(
-      "button",
-      `background:none;border:none;font-size:18px;cursor:pointer;padding:4px;color:#666;`,
-      "×"
-    );
+    // Create chat history sidebar
+    const sidebar = el("div", "");
+    sidebar.className = "chat-history-sidebar";
+    
+    const sidebarTitle = el("div", "", "Chat-Verlauf");
+    sidebarTitle.className = "chat-history-title";
+    sidebar.appendChild(sidebarTitle);
+    
+    // Sample chat history items
+    const chatHistoryItems = [
+      "Kostenlos 500€ not p...",
+      "Wie wird meine Provision...",
+      "Was ist Robethood überhaupt",
+      "Ich kriege 100€, was kriegt..."
+    ];
+    
+    chatHistoryItems.forEach(text => {
+      const item = el("button", "");
+      item.className = "chat-history-item";
+      const itemText = el("span", "", text);
+      itemText.className = "chat-history-text";
+      item.appendChild(itemText);
+      sidebar.appendChild(item);
+    });
+
+    // Create main content area
+    const mainContent = el("div", "");
+    mainContent.className = "main-content";
+
+    // Close button
+    const closeBtn = el("button", "", "×");
+    closeBtn.className = "chat-close-button";
     closeBtn.id = "ai-chat-close";
-    header.appendChild(title);
-    header.appendChild(closeBtn);
+    
+    // Initial search view
+    function createSearchView() {
+      const searchContainer = el("div", "");
+      searchContainer.className = "search-container";
+      
+      // Main heading
+      const heading = el("h1", "", "Hey, wie kann ich dir helfen?");
+      heading.className = "main-heading";
+      
+      // Search section
+      const searchSection = el("div", "");
+      searchSection.className = "search-section";
+      
+      // Search input container
+      const searchInputContainer = el("div", "");
+      searchInputContainer.className = "search-input-container";
+      
+      const searchInput = el("input", "");
+      searchInput.className = "search-input";
+      searchInput.type = "text";
+      searchInput.placeholder = "Frag Matchi, was du willst!";
+      
+      const submitButton = el("button", "");
+      submitButton.className = "search-submit-button";
+      submitButton.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 12L12 5L19 12M12 19V6V19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+      
+      searchInputContainer.appendChild(searchInput);
+      searchInputContainer.appendChild(submitButton);
+      
+      // FAQ buttons
+      const faqContainer = el("div", "");
+      faqContainer.className = "faq-container";
+      
+      const faqQuestions = [
+        "Wie wird meine Provision für ausbezahlt?",
+        "Was ist Robethood überhaupt",
+        "Ich kriege 100€, was kriegt der Mitspieler?",
+        "Was ist ein Wettexperte?",
+        "Wie viel \"verdient\" ein Wettexperte?"
+      ];
+      
+      faqQuestions.forEach(question => {
+        const faqBtn = el("button", "", question);
+        faqBtn.className = "faq-button";
+        faqBtn.addEventListener("click", function() {
+          searchInput.value = question;
+          handleSearch(question);
+        });
+        faqContainer.appendChild(faqBtn);
+      });
+      
+      searchSection.appendChild(searchInputContainer);
+      searchSection.appendChild(faqContainer);
+      
+      searchContainer.appendChild(heading);
+      searchContainer.appendChild(searchSection);
+      
+      // Event handlers
+      function handleSearch(query) {
+        if (!query) query = searchInput.value.trim();
+        if (!query) return;
+        
+        // Transition to chat view
+        createChatView(query);
+      }
+      
+      submitButton.addEventListener("click", () => handleSearch());
+      searchInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleSearch();
+        }
+      });
+      
+      return searchContainer;
+    }
+    
+    // Chat view (simplified for now)
+    function createChatView(initialQuery) {
+      currentView = 'chat';
+      
+      // Clear main content
+      mainContent.innerHTML = "";
+      
+      // Create simple chat interface
+      const chatContainer = el("div", `flex:1;display:flex;flex-direction:column;padding:20px;`);
+      
+      const messagesArea = el("div", `flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;`);
+      messagesArea.className = "messages-area";
+      
+      const inputBar = el("div", `padding:12px;border-top:1px solid #eee;display:flex;gap:8px;`);
+      
+      const input = el("input", `flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:8px;outline:none;font-size:16px;`);
+      input.type = "text";
+      input.placeholder = "Type your message...";
+      input.value = initialQuery;
+      
+      const sendBtn = el("button", `padding:12px 16px;border:0;border-radius:8px;background:#375947;color:#fff;font-weight:600;cursor:pointer;`, "Send");
+      
+      inputBar.appendChild(input);
+      inputBar.appendChild(sendBtn);
+      
+      chatContainer.appendChild(messagesArea);
+      chatContainer.appendChild(inputBar);
+      
+      mainContent.appendChild(chatContainer);
+      
+      // Add initial message
+      if (initialQuery) {
+        addMessage("user", initialQuery);
+        addMessage("assistant", "Thank you for your question. This is a basic response. The full chat functionality will be implemented next.");
+      }
+      
+      function addMessage(role, content) {
+        const messageDiv = el("div", `display:flex;${role === 'user' ? 'justify-content:flex-end' : 'justify-content:flex-start'};`);
+        const bubble = el("div", "");
+        bubble.className = `message-bubble ${role}`;
+        bubble.textContent = content;
+        messageDiv.appendChild(bubble);
+        messagesArea.appendChild(messageDiv);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+      }
+      
+      function handleSend() {
+        const text = input.value.trim();
+        if (!text) return;
+        
+        addMessage("user", text);
+        input.value = "";
+        
+        // Basic response
+        setTimeout(() => {
+          addMessage("assistant", "This is a placeholder response. Full AI integration coming soon!");
+        }, 500);
+      }
+      
+      sendBtn.addEventListener("click", handleSend);
+      input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleSend();
+        }
+      });
+      
+      setTimeout(() => input.focus(), 0);
+    }
 
-    // Messages area
-    const messagesArea = el(
-      "div",
-      `flex:1;overflow:auto;background:#ffffff;padding:16px;display:flex;flex-direction:column;gap:12px;`
-    );
-
-    // Input area
-    const inputBar = el(
-      "div",
-      `padding:12px;border-top:1px solid #eee;display:flex;gap:8px;background:#f8f9fa;`
-    );
-    const input = el(
-      "input",
-      `flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:8px;outline:none;font-size:16px;`
-    );
-    input.type = "text";
-    input.placeholder = "Type your message...";
-    const sendBtn = el(
-      "button",
-      `padding:12px 16px;border:0;border-radius:8px;background:#2d3748;color:#fff;font-weight:600;cursor:pointer;`,
-      "Send"
-    );
-    inputBar.appendChild(input);
-    inputBar.appendChild(sendBtn);
-
+    // Initialize with search view
+    const searchView = createSearchView();
+    mainContent.appendChild(searchView);
+    
     // Compose DOM
-    root.appendChild(header);
-    root.appendChild(messagesArea);
-    root.appendChild(inputBar);
+    root.appendChild(sidebar);
+    root.appendChild(mainContent);
+    root.appendChild(closeBtn);
     document.body.appendChild(root);
     emit('ai-chat:open');
 
     // Close behavior
     function doClose() {
+      // Restore page scroll
+      try {
+        document.documentElement.style.overflow = _prevHtmlOverflow || '';
+        document.body.style.overflow = _prevBodyOverflow || '';
+      } catch (_) {}
       root.remove();
       document.removeEventListener("keydown", handleEscape);
       emit('ai-chat:close');
@@ -133,127 +296,11 @@
     }
     document.addEventListener("keydown", handleEscape);
 
-    // Render helpers
-    function renderMessage(msg) {
-      const isUser = msg.role === "user";
-      const wrap = el(
-        "div",
-        `display:flex;${isUser ? "justify-content:flex-end" : "justify-content:flex-start"};`
-      );
-      const bubble = el(
-        "div",
-        `max-width:75%;padding:10px 12px;border-radius:12px;line-height:1.4;white-space:pre-wrap;` +
-          (isUser
-            ? "background:#2d3748;color:#fff;border-top-right-radius:4px;"
-            : "background:#f1f5f9;color:#111827;border-top-left-radius:4px;")
-      );
-      const html = markdownToHTML(msg.content || "");
-      bubble.innerHTML = html;
-      wrap.appendChild(bubble);
-      messagesArea.appendChild(wrap);
-    }
-
-    function renderAll(messages) {
-      messagesArea.innerHTML = "";
-      if (!messages || !messages.length) {
-        const welcome = el(
-          "div",
-          "color:#6b7280;text-align:center;margin-top:12px;",
-          "Welcome! Ask a question to get started."
-        );
-        messagesArea.appendChild(welcome);
-      } else {
-        messages.forEach(renderMessage);
-      }
-      messagesArea.scrollTop = messagesArea.scrollHeight;
-    }
-
-    // State
-    let state = readState();
-    renderAll(state.messages);
-
-    // Networking
-    let pending = false;
-    function setPending(v) {
-      pending = v;
-      input.disabled = v;
-      sendBtn.disabled = v;
-      sendBtn.style.opacity = v ? "0.7" : "1";
-      sendBtn.style.cursor = v ? "default" : "pointer";
-    }
-
-    function showError(text) {
-      const wrap = el("div", "display:flex;justify-content:center;");
-      const tag = el(
-        "div",
-        "background:#fee2e2;color:#991b1b;padding:8px 10px;border-radius:8px;font-size:14px;",
-        text
-      );
-      wrap.appendChild(tag);
-      messagesArea.appendChild(wrap);
-      messagesArea.scrollTop = messagesArea.scrollHeight;
-    }
-
-    async function sendToBackend() {
-      if (!endpointUrl) {
-        showError("Missing endpointUrl. Configure when mounting.");
-        return;
-      }
-
-      const body = {
-        conversation_id: state.conversation_id || null,
-        messages: state.messages.map(m => ({ role: m.role, content: m.content }))
-      };
-
-      const headers = { "Content-Type": "application/json" };
-      if (apiKey) headers["Authorization"] = `ApiKey ${apiKey}`;
-
-      try {
-        setPending(true);
-        const res = await fetch(endpointUrl, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(body)
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (!data || !data.new_message) throw new Error("Invalid response body");
-
-        state.conversation_id = data.conversation_id || state.conversation_id || null;
-        state.messages.push({ role: "assistant", content: data.new_message.content || "" });
-        writeState(state);
-        renderAll(state.messages);
-      } catch (err) {
-        showError("Failed to contact support. Please try again.");
-        // Optionally log to console for debugging
-        try { console.error("AI chat error:", err); } catch (_) {}
-      } finally {
-        setPending(false);
-      }
-    }
-
-    function handleSend() {
-      const text = (input.value || "").trim();
-      if (!text || pending) return;
-      // Append user message
-      state.messages.push({ role: "user", content: text });
-      writeState(state);
-      renderAll(state.messages);
-      input.value = "";
-      // Call backend
-      sendToBackend();
-    }
-
-    sendBtn.addEventListener("click", handleSend);
-    input.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    });
-
-    // Focus input on open
-    setTimeout(() => input.focus(), 0);
+    // Focus search input on open
+    setTimeout(() => {
+      const searchInput = root.querySelector('.search-input');
+      if (searchInput) searchInput.focus();
+    }, 0);
   }
 
   window.AIChatWidget = { loadCSS, mountChat };

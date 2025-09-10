@@ -1,0 +1,449 @@
+/* H1 + Search */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 0px;
+gap: 48px;
+
+position: absolute;
+width: 839px;
+height: 257.24px;
+left: calc(50% - 839px/2 + 103px);
+top: calc(50% - 257.24px/2 - 72.38px);
+
+
+
+/* Hey, wie kann ich dir helfen? */
+
+width: 839px;
+height: 31px;
+
+/* h1 */
+font-family: 'Rajdhani';
+font-style: normal;
+font-weight: 700;
+font-size: 26px;
+line-height: 120%;
+/* or 31px */
+text-align: center;
+
+/* Primary */
+color: #375947;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Search + Quick Search Buttons */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 0px;
+gap: 24px;
+
+width: 839px;
+height: 178.24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Frame 9 */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: space-between;
+align-items: center;
+padding: 0px 0px 0px 34px;
+gap: 337px;
+
+width: 839px;
+height: 76px;
+
+background: #FFFFFF;
+box-shadow: -2px 3px 25px 2px rgba(0, 0, 0, 0.05);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Frag Matchi, was du willst! */
+
+width: 208px;
+height: 20px;
+
+/* h3 */
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 16px;
+line-height: 125%;
+/* identical to box height, or 20px */
+
+/* Gray 3 */
+color: #7E848C;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Frame 9 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 22px 17px;
+gap: 10px;
+
+width: 76px;
+height: 76px;
+
+background: #375847;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* solar:arrow-up-linear */
+
+width: 32px;
+height: 32px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 25%;
+right: 25%;
+top: 16.67%;
+bottom: 16.67%;
+
+border: 2px solid #FFFFFF;
+
+
+/* FAQs */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+flex-wrap: wrap;
+justify-content: center;
+align-items: center;
+align-content: center;
+padding: 0px;
+gap: 14.12px;
+
+width: 773px;
+height: 78.24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* message */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 7.53084px 15.0617px;
+gap: 7.53px;
+
+width: 268.12px;
+height: 32.06px;
+
+/* Background
+
+App background
+*/
+background: #FFFFFF;
+/* Gray bg
+
+Card, Background, Inputs
+*/
+border: 1px solid #F2F4FB;
+transform: matrix(-1, 0, 0, 1, 0, 0);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Wie wird meine Provision für ausbezahlt? */
+
+width: 238px;
+height: 17px;
+
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 140%;
+/* identical to box height, or 17px */
+
+/* Primary */
+color: #375947;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* message */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 7.53084px 15.0617px;
+gap: 7.53px;
+
+width: 203.12px;
+height: 32.06px;
+
+/* Background
+
+App background
+*/
+background: #FFFFFF;
+/* Gray bg
+
+Card, Background, Inputs
+*/
+border: 1px solid #F2F4FB;
+transform: matrix(-1, 0, 0, 1, 0, 0);
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Was ist Robethood überhaupt */
+
+width: 173px;
+height: 17px;
+
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 140%;
+/* identical to box height, or 17px */
+
+/* Primary */
+color: #375947;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* message */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 7.53084px 15.0617px;
+gap: 7.53px;
+
+width: 271.12px;
+height: 32.06px;
+
+/* Background
+
+App background
+*/
+background: #FFFFFF;
+/* Gray bg
+
+Card, Background, Inputs
+*/
+border: 1px solid #F2F4FB;
+transform: matrix(-1, 0, 0, 1, 0, 0);
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+
+/* Ich kriege 100€, was kriegt der Mitspieler? */
+
+width: 241px;
+height: 17px;
+
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 140%;
+/* identical to box height, or 17px */
+
+/* Primary */
+color: #375947;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* message */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 7.53084px 15.0617px;
+gap: 7.53px;
+
+width: 174.12px;
+height: 32.06px;
+
+/* Background
+
+App background
+*/
+background: #FFFFFF;
+/* Gray bg
+
+Card, Background, Inputs
+*/
+border: 1px solid #F2F4FB;
+transform: matrix(-1, 0, 0, 1, 0, 0);
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+
+
+/* Was ist ein Wettexperte? */
+
+width: 144px;
+height: 17px;
+
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 140%;
+/* identical to box height, or 17px */
+
+/* Primary */
+color: #375947;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* message */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: flex-end;
+align-items: center;
+padding: 7.53084px 15.0617px;
+gap: 7.53px;
+
+width: 237.12px;
+height: 32.06px;
+
+/* Background
+
+App background
+*/
+background: #FFFFFF;
+/* Gray bg
+
+Card, Background, Inputs
+*/
+border: 1px solid #F2F4FB;
+transform: matrix(-1, 0, 0, 1, 0, 0);
+
+/* Inside auto layout */
+flex: none;
+order: 4;
+flex-grow: 0;
+
+
+/* Wie viel “verdient” ein Wettexperte? */
+
+width: 207px;
+height: 17px;
+
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 12px;
+line-height: 140%;
+/* identical to box height, or 17px */
+
+/* Primary */
+color: #375947;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
