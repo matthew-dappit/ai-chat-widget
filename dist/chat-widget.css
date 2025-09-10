@@ -57,6 +57,38 @@
   margin-bottom: 10px;
 }
 
+/* Chat history item container */
+.chat-history-item-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.chat-history-item-container:hover {
+  background: #f0efee;
+}
+
+.chat-history-item-container.active {
+  background: #f0efee;
+}
+
+/* Chat history button (main clickable area) */
+.chat-history-button {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px;
+  flex: 1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 4px;
+}
+
+/* Legacy class for existing styles */
 .chat-history-item {
   display: flex;
   align-items: center;
@@ -73,6 +105,51 @@
 
 .chat-history-item:hover {
   background: #f0efee;
+}
+
+.chat-history-item.active {
+  background: #f0efee;
+}
+
+.chat-history-item.new-chat-btn {
+  background: var(--primary-green);
+  color: white;
+  margin-bottom: 8px;
+}
+
+.chat-history-item.new-chat-btn:hover {
+  background: #2d4735;
+}
+
+.chat-history-item.new-chat-btn .chat-history-text {
+  color: white;
+}
+
+/* Delete button for chat items */
+.chat-delete-button {
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.chat-history-item-container:hover .chat-delete-button {
+  opacity: 1;
+}
+
+.chat-delete-button:hover {
+  background: #ff4444;
+  color: white;
 }
 
 .chat-history-text {
@@ -271,6 +348,52 @@
   background: #f1f5f9;
   color: #111827;
   border-top-left-radius: 4px;
+}
+
+/* Typing indicator */
+.message-bubble.typing-indicator {
+  background: #f1f5f9;
+  color: #111827;
+  border-top-left-radius: 4px;
+  padding: 16px 20px;
+  min-width: 60px;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.typing-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  30% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
 }
 
 /* Responsive Design */

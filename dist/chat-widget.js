@@ -1,6 +1,11 @@
 (function () {
   const STYLE_ID = "ai-chat-widget-css";
-  const STORAGE_KEY = "ai-chat.conversation"; // stores { conversation_id, messages }
+  const CHATS_STORAGE_KEY = "ai-chat.chats"; // stores array of chat objects
+  const ACTIVE_CHAT_KEY = "ai-chat.activeChat"; // stores active chat id
+
+  // API Configuration
+  const API_ENDPOINT = "https://api.robethood.net/api:zwntye2i/ai_chats/website/matchi";
+  const API_KEY = "KlUKmJF7-VsDg-4s7J-8Y9Q-JSybzsF3HW1YyfuPhUlGPI9qGuIdJAKwp-i5rJsH4nTjMMvjcnSmZ1ZS7euU2-xCcmm2Z5YtkN6bg2ADteKngs2-n-B1m4TestjpFO9cUmtnCig2lLxNFBMCz8cTTe1rj6F9dPPL1GK3ozXNV3_D_LMYFtZY6SIFNEmYOBAK3P8";
 
   function loadCSS(href) {
     if (document.getElementById(STYLE_ID)) return;
@@ -11,23 +16,146 @@
     document.head.appendChild(l);
   }
 
-  function readState() {
+  // Chat management functions
+  function getAllChats() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { conversation_id: null, messages: [] };
+      const raw = localStorage.getItem(CHATS_STORAGE_KEY);
+      if (!raw) return [];
       const parsed = JSON.parse(raw);
-      if (!parsed || !Array.isArray(parsed.messages)) return { conversation_id: null, messages: [] };
-      return { conversation_id: parsed.conversation_id || null, messages: parsed.messages };
+      return Array.isArray(parsed) ? parsed : [];
     } catch (_) {
-      return { conversation_id: null, messages: [] };
+      return [];
     }
   }
 
-  function writeState(state) {
+  function saveChats(chats) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(CHATS_STORAGE_KEY, JSON.stringify(chats));
     } catch (_) {
       // ignore storage write failures
+    }
+  }
+
+  function getActiveChat() {
+    try {
+      const chatId = localStorage.getItem(ACTIVE_CHAT_KEY);
+      if (!chatId) return null;
+      const chats = getAllChats();
+      return chats.find(chat => chat.id === chatId) || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function setActiveChat(chatId) {
+    try {
+      localStorage.setItem(ACTIVE_CHAT_KEY, chatId);
+    } catch (_) {
+      // ignore storage write failures
+    }
+  }
+
+  function createNewChat(initialMessage = null) {
+    const chatId = generateChatId();
+    const chat = {
+      id: chatId,
+      conversation_id: null,
+      messages: initialMessage ? [{ role: "user", content: initialMessage }] : [],
+      title: initialMessage ? truncateTitle(initialMessage) : "New Chat",
+      createdAt: Date.now()
+    };
+    
+    const chats = getAllChats();
+    chats.unshift(chat); // Add to beginning
+    saveChats(chats);
+    setActiveChat(chatId);
+    
+    return chat;
+  }
+
+  function updateChat(chatId, updates) {
+    const chats = getAllChats();
+    const chatIndex = chats.findIndex(chat => chat.id === chatId);
+    if (chatIndex === -1) return null;
+    
+    chats[chatIndex] = { ...chats[chatIndex], ...updates };
+    saveChats(chats);
+    return chats[chatIndex];
+  }
+
+  function deleteChat(chatId) {
+    const chats = getAllChats();
+    const filteredChats = chats.filter(chat => chat.id !== chatId);
+    saveChats(filteredChats);
+    
+    // If the deleted chat was active, set a new active chat
+    const activeChat = getActiveChat();
+    if (activeChat && activeChat.id === chatId) {
+      if (filteredChats.length > 0) {
+        setActiveChat(filteredChats[0].id);
+      } else {
+        // No chats left, create a new one
+        const newChat = createNewChat();
+        setActiveChat(newChat.id);
+      }
+    }
+    
+    return filteredChats.length;
+  }
+
+  function generateChatId() {
+    return 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+
+  function truncateTitle(text, maxLength = 25) {
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+  }
+
+  // Legacy functions for compatibility
+  function readState() {
+    const activeChat = getActiveChat();
+    if (!activeChat) return { conversation_id: null, messages: [] };
+    return { 
+      conversation_id: activeChat.conversation_id, 
+      messages: activeChat.messages 
+    };
+  }
+
+  function writeState(state) {
+    const activeChat = getActiveChat();
+    if (activeChat) {
+      updateChat(activeChat.id, {
+        conversation_id: state.conversation_id,
+        messages: state.messages
+      });
+    }
+  }
+
+  // API function to send message to Matchi
+  async function sendMessageToMatchi(conversationId, messageHistory) {
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `ApiKey ${API_KEY}`
+        },
+        body: JSON.stringify({
+          'conversation_id': conversationId,
+          'messages': messageHistory
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+
+    } catch (error) {
+      console.error("Error communicating with the AI chatbot:", error);
+      return null;
     }
   }
 
@@ -89,26 +217,103 @@
     const sidebar = el("div", "");
     sidebar.className = "chat-history-sidebar";
     
-    const sidebarTitle = el("div", "", "Chat-Verlauf");
-    sidebarTitle.className = "chat-history-title";
-    sidebar.appendChild(sidebarTitle);
+    function updateSidebar() {
+      // Clear existing content
+      sidebar.innerHTML = "";
+      
+      const sidebarTitle = el("div", "", "Chat-Verlauf");
+      sidebarTitle.className = "chat-history-title";
+      sidebar.appendChild(sidebarTitle);
+      
+      // New chat button
+      const newChatBtn = el("button", "");
+      newChatBtn.className = "chat-history-item new-chat-btn";
+      newChatBtn.innerHTML = '<span class="chat-history-text">+ New Chat</span>';
+      newChatBtn.addEventListener("click", function() {
+        createNewChatHandler();
+      });
+      sidebar.appendChild(newChatBtn);
+      
+      // Chat history items from localStorage
+      const chats = getAllChats();
+      const activeChat = getActiveChat();
+      
+      chats.forEach(chat => {
+        const item = el("div", "");
+        item.className = "chat-history-item-container";
+        if (activeChat && chat.id === activeChat.id) {
+          item.classList.add("active");
+        }
+        
+        const chatButton = el("button", "");
+        chatButton.className = "chat-history-button";
+        
+        const itemText = el("span", "", chat.title);
+        itemText.className = "chat-history-text";
+        chatButton.appendChild(itemText);
+        
+        chatButton.addEventListener("click", function() {
+          switchToChat(chat.id);
+        });
+        
+        const deleteButton = el("button", "", "×");
+        deleteButton.className = "chat-delete-button";
+        deleteButton.title = "Delete chat";
+        deleteButton.addEventListener("click", function(e) {
+          e.stopPropagation(); // Prevent switching to chat
+          deleteChatHandler(chat.id, chat.title);
+        });
+        
+        item.appendChild(chatButton);
+        item.appendChild(deleteButton);
+        sidebar.appendChild(item);
+      });
+    }
     
-    // Sample chat history items
-    const chatHistoryItems = [
-      "Kostenlos 500€ not p...",
-      "Wie wird meine Provision...",
-      "Was ist Robethood überhaupt",
-      "Ich kriege 100€, was kriegt..."
-    ];
+    function createNewChatHandler() {
+      createNewChat();
+      updateSidebar();
+      createSearchView();
+      currentView = 'search';
+    }
     
-    chatHistoryItems.forEach(text => {
-      const item = el("button", "");
-      item.className = "chat-history-item";
-      const itemText = el("span", "", text);
-      itemText.className = "chat-history-text";
-      item.appendChild(itemText);
-      sidebar.appendChild(item);
-    });
+    function switchToChat(chatId) {
+      setActiveChat(chatId);
+      const chat = getActiveChat();
+      if (chat && chat.messages.length > 0) {
+        createChatView(null, chat);
+        currentView = 'chat';
+      } else {
+        createSearchView();
+        currentView = 'search';
+      }
+      updateSidebar();
+    }
+    
+    function deleteChatHandler(chatId, chatTitle) {
+      // Show confirmation dialog
+      const confirmed = confirm(`Are you sure you want to delete the chat "${chatTitle}"?`);
+      if (!confirmed) return;
+      
+      const remainingChats = deleteChat(chatId);
+      updateSidebar();
+      
+      // If we deleted the active chat, switch to search or another chat
+      const activeChat = getActiveChat();
+      if (activeChat) {
+        if (activeChat.messages.length > 0) {
+          createChatView(null, activeChat);
+          currentView = 'chat';
+        } else {
+          createSearchView();
+          currentView = 'search';
+        }
+      } else {
+        // No chats left, show search view
+        createSearchView();
+        currentView = 'search';
+      }
+    }
 
     // Create main content area
     const mainContent = el("div", "");
@@ -121,6 +326,9 @@
     
     // Initial search view
     function createSearchView() {
+      // Clear main content first
+      mainContent.innerHTML = "";
+      
       const searchContainer = el("div", "");
       searchContainer.className = "search-container";
       
@@ -178,13 +386,31 @@
       searchContainer.appendChild(heading);
       searchContainer.appendChild(searchSection);
       
+      mainContent.appendChild(searchContainer);
+      
+      // Focus search input on open
+      setTimeout(() => {
+        if (searchInput) searchInput.focus();
+      }, 0);
+      
       // Event handlers
       function handleSearch(query) {
         if (!query) query = searchInput.value.trim();
         if (!query) return;
         
-        // Transition to chat view
-        createChatView(query);
+        // Create new chat or use existing empty chat
+        let activeChat = getActiveChat();
+        if (!activeChat || activeChat.messages.length > 0) {
+          activeChat = createNewChat();
+        }
+        
+        // Update chat title based on query
+        activeChat.title = truncateTitle(query);
+        updateChat(activeChat.id, { title: activeChat.title });
+        
+        updateSidebar();
+        // Transition to chat view - let createChatView handle adding the message and sending to AI
+        createChatView(query, activeChat);
       }
       
       submitButton.addEventListener("click", () => handleSearch());
@@ -198,14 +424,21 @@
       return searchContainer;
     }
     
-    // Chat view (simplified for now)
-    function createChatView(initialQuery) {
+    // Chat view
+    function createChatView(initialQuery, chat = null) {
       currentView = 'chat';
+      
+      // Get or create active chat
+      let activeChat = chat || getActiveChat();
+      if (!activeChat) {
+        activeChat = createNewChat(initialQuery);
+        updateSidebar();
+      }
       
       // Clear main content
       mainContent.innerHTML = "";
       
-      // Create simple chat interface
+      // Create chat interface
       const chatContainer = el("div", `flex:1;display:flex;flex-direction:column;padding:20px;`);
       
       const messagesArea = el("div", `flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;`);
@@ -216,7 +449,6 @@
       const input = el("input", `flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:8px;outline:none;font-size:16px;`);
       input.type = "text";
       input.placeholder = "Type your message...";
-      input.value = initialQuery;
       
       const sendBtn = el("button", `padding:12px 16px;border:0;border-radius:8px;background:#375947;color:#fff;font-weight:600;cursor:pointer;`, "Send");
       
@@ -228,33 +460,102 @@
       
       mainContent.appendChild(chatContainer);
       
-      // Add initial message
-      if (initialQuery) {
+      // Load existing messages
+      activeChat.messages.forEach(message => {
+        addMessage(message.role, message.content);
+      });
+      
+      // If there's an initial query and it's not already in messages, process it
+      if (initialQuery && !activeChat.messages.find(m => m.content === initialQuery)) {
+        // Add user message to chat
+        activeChat.messages.push({ role: "user", content: initialQuery });
+        updateChat(activeChat.id, { messages: activeChat.messages });
+        
+        // Add to UI and send to AI
         addMessage("user", initialQuery);
-        addMessage("assistant", "Thank you for your question. This is a basic response. The full chat functionality will be implemented next.");
+        sendMessageToAI(initialQuery);
+      }
+      
+      // Create typing indicator
+      function createTypingIndicator() {
+        const messageDiv = el("div", `display:flex;justify-content:flex-start;`);
+        const bubble = el("div", "");
+        bubble.className = `message-bubble assistant typing-indicator`;
+        bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+        messageDiv.appendChild(bubble);
+        messagesArea.appendChild(messageDiv);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+        return messageDiv;
       }
       
       function addMessage(role, content) {
         const messageDiv = el("div", `display:flex;${role === 'user' ? 'justify-content:flex-end' : 'justify-content:flex-start'};`);
         const bubble = el("div", "");
         bubble.className = `message-bubble ${role}`;
-        bubble.textContent = content;
+        bubble.innerHTML = markdownToHTML(content);
         messageDiv.appendChild(bubble);
         messagesArea.appendChild(messageDiv);
         messagesArea.scrollTop = messagesArea.scrollHeight;
+      }
+      
+      async function sendMessageToAI(userMessage) {
+        // Show typing indicator
+        const typingIndicator = createTypingIndicator();
+        
+        try {
+          // Get current chat state
+          const currentChat = getActiveChat();
+          const response = await sendMessageToMatchi(
+            currentChat.conversation_id, 
+            currentChat.messages
+          );
+          
+          // Remove typing indicator
+          typingIndicator.remove();
+          
+          if (response && response.new_message) {
+            // Add assistant message to UI
+            addMessage("assistant", response.new_message.content);
+            
+            // Update chat in storage
+            const updatedMessages = [...currentChat.messages, response.new_message];
+            updateChat(currentChat.id, {
+              conversation_id: response.conversation_id,
+              messages: updatedMessages
+            });
+            
+            updateSidebar();
+          } else {
+            // Show error message
+            addMessage("assistant", "Sorry, I'm having trouble responding right now. Please try again.");
+          }
+        } catch (error) {
+          // Remove typing indicator
+          typingIndicator.remove();
+          console.error("Error sending message:", error);
+          addMessage("assistant", "Sorry, I'm having trouble responding right now. Please try again.");
+        }
       }
       
       function handleSend() {
         const text = input.value.trim();
         if (!text) return;
         
+        // Add user message to UI
         addMessage("user", text);
         input.value = "";
         
-        // Basic response
-        setTimeout(() => {
-          addMessage("assistant", "This is a placeholder response. Full AI integration coming soon!");
-        }, 500);
+        // Update chat in storage
+        const currentChat = getActiveChat();
+        const updatedMessages = [...currentChat.messages, { role: "user", content: text }];
+        updateChat(currentChat.id, {
+          messages: updatedMessages
+        });
+        
+        updateSidebar();
+        
+        // Send to AI
+        sendMessageToAI(text);
       }
       
       sendBtn.addEventListener("click", handleSend);
@@ -268,9 +569,21 @@
       setTimeout(() => input.focus(), 0);
     }
 
-    // Initialize with search view
-    const searchView = createSearchView();
-    mainContent.appendChild(searchView);
+    // Initialize with search view or active chat
+    let activeChat = getActiveChat();
+    if (activeChat && activeChat.messages.length > 0) {
+      createChatView(null, activeChat);
+    } else {
+      if (!activeChat) {
+        // Create a new empty chat if none exists
+        createNewChat();
+      }
+      const searchView = createSearchView();
+      mainContent.appendChild(searchView);
+    }
+    
+    // Initialize sidebar
+    updateSidebar();
     
     // Compose DOM
     root.appendChild(sidebar);
