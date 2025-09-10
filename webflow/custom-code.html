@@ -1,0 +1,32 @@
+<script>
+(function () {
+  var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.0/dist/chat-widget.js";
+  var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.0/dist/chat-widget.css";
+  function ready(fn){/in/.test(document.readyState)?setTimeout(function(){ready(fn)},9):fn()}
+  function load(src, onload){
+    var s=document.createElement("script"); s.src=src; s.async=true; s.onload=onload;
+    document.head.appendChild(s);
+  }
+  ready(function(){
+    // Floating button - positioned in bottom left
+    var btn=document.createElement("button");
+    btn.id="ai-chat-launcher";
+    btn.type="button";
+    btn.setAttribute("aria-label","Open AI chat");
+    btn.style.cssText="position:fixed;left:16px;bottom:16px;z-index:2147483647;padding:12px 14px;border-radius:9999px;border:0;cursor:pointer";
+    btn.textContent="Chat";
+    document.body.appendChild(btn);
+
+    btn.addEventListener("click", function(){
+      if (!window.AIChatWidget) {
+        load(JS, function(){
+          window.AIChatWidget.loadCSS(CSS);
+          window.AIChatWidget.mountChat({ backendUrl: "https://your-api.example.com/chat" });
+        });
+      } else {
+        window.AIChatWidget.mountChat({ backendUrl: "https://your-api.example.com/chat" });
+      }
+    });
+  });
+})();
+</script>
