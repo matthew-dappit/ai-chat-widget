@@ -1,0 +1,72 @@
+/* Frame 12 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+position: absolute;
+width: 512.98px;
+height: 44px;
+left: 279px;
+top: 395px;
+
+
+
+/* Matchi Profile */
+
+width: 39.98px;
+height: 39.98px;
+
+background: url(documents.png);
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Ellipse 22 */
+
+position: absolute;
+width: 39.98px;
+height: 39.98px;
+left: 0px;
+top: 2.01px;
+
+background: #D9D9D9;
+
+
+/* documents 1 */
+
+position: absolute;
+left: -4.09%;
+right: 89.28%;
+top: 4.57%;
+bottom: 0.02%;
+
+background: url(documents.png);
+
+
+/* Hey there, you’ll get your money as soon as we’ve verified your documents and your WEX has been in touch with you! */
+
+width: 457px;
+height: 44px;
+
+/* p1 */
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 400;
+font-size: 16px;
+line-height: 140%;
+/* or 22px */
+
+color: #020204;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;

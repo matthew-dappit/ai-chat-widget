@@ -1,0 +1,155 @@
+/* Frame 11 */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 24px;
+gap: 793px;
+
+position: absolute;
+width: 1176px;
+height: 87.98px;
+left: 247px;
+top: 70px;
+
+border: 3px solid #FAF9F8;
+
+
+/* Frame 15 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 16px;
+
+width: 129px;
+height: 39.98px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Matchi Profile */
+
+width: 40px;
+height: 39.98px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Ellipse 24 */
+
+position: absolute;
+width: 39.98px;
+height: 39.98px;
+left: 0.02px;
+top: 0px;
+
+/* Primary
+
+CTA&#39;s, Links, Buttons
+*/
+background: #375947;
+
+
+/* Intersect */
+
+position: absolute;
+width: 38.58px;
+height: 30.92px;
+left: 0.76px;
+top: 9.06px;
+
+background: radial-gradient(50.76% 63.35% at 50.06% 63.35%, #141518 0%, rgba(20, 21, 24, 0.991615) 11.79%, rgba(20, 21, 24, 0.967585) 21.38%, rgba(20, 21, 24, 0.9296) 29.12%, rgba(20, 21, 24, 0.879348) 35.34%, rgba(20, 21, 24, 0.818519) 40.37%, rgba(20, 21, 24, 0.671881) 48.24%, rgba(20, 21, 24, 0.589452) 51.76%, rgba(20, 21, 24, 0.414815) 59.63%, rgba(20, 21, 24, 0.325985) 64.66%, rgba(20, 21, 24, 0.2384) 70.88%, rgba(20, 21, 24, 0.153748) 78.62%, rgba(20, 21, 24, 0.0737185) 88.21%, rgba(20, 21, 24, 0) 100%);
+opacity: 0.98;
+
+
+/* Matchi Profile */
+
+position: absolute;
+width: 39.98px;
+height: 39.98px;
+left: 0px;
+top: 0px;
+
+background: url(documents.png);
+
+
+/* Ellipse 22 */
+
+position: absolute;
+width: 39.98px;
+height: 39.98px;
+left: 0px;
+top: 0px;
+
+background: #D9D9D9;
+
+
+/* documents 1 */
+
+position: absolute;
+left: -16.27%;
+right: 57.38%;
+top: 0%;
+bottom: -5%;
+
+background: url(documents.png);
+
+
+/* Matchi */
+
+width: 73px;
+height: 31px;
+
+/* h1 */
+font-family: 'Rajdhani';
+font-style: normal;
+font-weight: 700;
+font-size: 26px;
+line-height: 120%;
+/* or 31px */
+
+/* Primary */
+color: #375947;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Leave Chat */
+
+width: 86px;
+height: 20px;
+
+/* h3 */
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 16px;
+line-height: 125%;
+/* identical to box height, or 20px */
+
+/* Gray 3 */
+color: #7E848D;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;

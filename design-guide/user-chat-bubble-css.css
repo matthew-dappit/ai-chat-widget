@@ -1,0 +1,89 @@
+/* message */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 16px 24px;
+gap: 8px;
+
+position: absolute;
+width: 263px;
+height: 52px;
+left: 1020px;
+top: 295px;
+
+background: #FAF9F8;
+border-radius: 8px 8px 0px 8px;
+
+
+/* My Credit Card */
+
+width: 215px;
+height: 20px;
+
+/* h3 */
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 700;
+font-size: 16px;
+line-height: 125%;
+/* identical to box height, or 20px */
+
+/* Primary */
+color: #375947;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Picture_template */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+padding: 18.865px 61.74px;
+gap: 5.72px;
+
+display: none;
+width: 215px;
+height: 117px;
+
+background: url(image.png);
+border-radius: 4px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* 09:24 */
+
+display: none;
+width: 215px;
+height: 20px;
+
+/* p2 */
+font-family: 'Mulish';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 140%;
+/* identical to box height, or 20px */
+text-align: right;
+
+/* Background */
+color: #FFFFFF;
+
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 0;

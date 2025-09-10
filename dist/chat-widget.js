@@ -438,25 +438,68 @@
       // Clear main content
       mainContent.innerHTML = "";
       
-      // Create chat interface
-      const chatContainer = el("div", `flex:1;display:flex;flex-direction:column;padding:20px;`);
+      // Create chat interface with header
+      const chatContainer = el("div", "");
+      chatContainer.className = "chat-container";
       
-      const messagesArea = el("div", `flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px;`);
+      // Chat header
+      const chatHeader = el("div", "");
+      chatHeader.className = "chat-header";
+      
+      const headerProfile = el("div", "");
+      headerProfile.className = "chat-header-profile";
+      
+      const headerAvatar = el("div", "");
+      headerAvatar.className = "chat-header-avatar";
+      headerAvatar.innerHTML = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="20" fill="#375947"/>
+        <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" font-size="16">M</text>
+      </svg>`;
+      
+      const headerInfo = el("div", "");
+      headerInfo.className = "chat-header-info";
+      
+      const headerTitle = el("h3", "", "Matchi");
+      headerTitle.className = "chat-header-title";
+      
+      const headerSubtitle = el("p", "", "AI Support Assistant");
+      headerSubtitle.className = "chat-header-subtitle";
+      
+      headerInfo.appendChild(headerTitle);
+      headerInfo.appendChild(headerSubtitle);
+      headerProfile.appendChild(headerAvatar);
+      headerProfile.appendChild(headerInfo);
+      chatHeader.appendChild(headerProfile);
+      
+      // Messages area
+      const messagesArea = el("div", "");
       messagesArea.className = "messages-area";
       
-      const inputBar = el("div", `padding:12px;border-top:1px solid #eee;display:flex;gap:8px;`);
+      // Input area
+      const inputArea = el("div", "");
+      inputArea.className = "chat-input-area";
       
-      const input = el("input", `flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:8px;outline:none;font-size:16px;`);
+      const inputContainer = el("div", "");
+      inputContainer.className = "chat-input-container";
+      
+      const input = el("input", "");
+      input.className = "chat-input";
       input.type = "text";
-      input.placeholder = "Type your message...";
+      input.placeholder = "Schreibe deine Nachricht...";
       
-      const sendBtn = el("button", `padding:12px 16px;border:0;border-radius:8px;background:#375947;color:#fff;font-weight:600;cursor:pointer;`, "Send");
+      const sendBtn = el("button", "");
+      sendBtn.className = "chat-send-button";
+      sendBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+      </svg>`;
       
-      inputBar.appendChild(input);
-      inputBar.appendChild(sendBtn);
+      inputContainer.appendChild(input);
+      inputContainer.appendChild(sendBtn);
+      inputArea.appendChild(inputContainer);
       
+      chatContainer.appendChild(chatHeader);
       chatContainer.appendChild(messagesArea);
-      chatContainer.appendChild(inputBar);
+      chatContainer.appendChild(inputArea);
       
       mainContent.appendChild(chatContainer);
       
@@ -478,23 +521,58 @@
       
       // Create typing indicator
       function createTypingIndicator() {
-        const messageDiv = el("div", `display:flex;justify-content:flex-start;`);
+        const messageContainer = el("div", "");
+        messageContainer.className = "message-container assistant";
+        
+        const avatar = el("div", "");
+        avatar.className = "message-avatar";
+        avatar.innerHTML = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="20" fill="#375947"/>
+          <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" font-size="16">M</text>
+        </svg>`;
+        
+        const messageContent = el("div", "");
+        messageContent.className = "message-content";
+        
         const bubble = el("div", "");
-        bubble.className = `message-bubble assistant typing-indicator`;
+        bubble.className = "message-bubble typing-indicator";
         bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-        messageDiv.appendChild(bubble);
-        messagesArea.appendChild(messageDiv);
+        
+        messageContent.appendChild(bubble);
+        messageContainer.appendChild(avatar);
+        messageContainer.appendChild(messageContent);
+        messagesArea.appendChild(messageContainer);
         messagesArea.scrollTop = messagesArea.scrollHeight;
-        return messageDiv;
+        return messageContainer;
       }
       
       function addMessage(role, content) {
-        const messageDiv = el("div", `display:flex;${role === 'user' ? 'justify-content:flex-end' : 'justify-content:flex-start'};`);
+        const messageContainer = el("div", "");
+        messageContainer.className = `message-container ${role}`;
+        
+        const messageContent = el("div", "");
+        messageContent.className = "message-content";
+        
         const bubble = el("div", "");
         bubble.className = `message-bubble ${role}`;
         bubble.innerHTML = markdownToHTML(content);
-        messageDiv.appendChild(bubble);
-        messagesArea.appendChild(messageDiv);
+        
+        messageContent.appendChild(bubble);
+        
+        if (role === 'assistant') {
+          const avatar = el("div", "");
+          avatar.className = "message-avatar";
+          avatar.innerHTML = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="20" fill="#375947"/>
+            <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" font-size="16">M</text>
+          </svg>`;
+          messageContainer.appendChild(avatar);
+          messageContainer.appendChild(messageContent);
+        } else {
+          messageContainer.appendChild(messageContent);
+        }
+        
+        messagesArea.appendChild(messageContainer);
         messagesArea.scrollTop = messagesArea.scrollHeight;
       }
       
