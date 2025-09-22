@@ -46,8 +46,8 @@ To customize, override variables on the host page before `mountChat()` runs.
 ```html
 <script>
 (function () {
-  var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.2/dist/chat-widget.js";
-  var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.2/dist/chat-widget.css";
+  var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.4/dist/chat-widget.js";
+  var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.4/dist/chat-widget.css";
   function ready(fn){/in/.test(document.readyState)?setTimeout(function(){ready(fn)},9):fn()}
   function load(src, onload){var s=document.createElement("script"); s.src=src; s.async=true; s.onload=onload; document.head.appendChild(s)}
   ready(function(){
@@ -79,4 +79,3 @@ Use Git tags and pin CDN URLs to specific versions:
 ## Implementation Notes
 
 A high-level description of UI structure, state, and flows is documented in `IMPLEMENTATION_SUMMARY.md`.
-

@@ -2,6 +2,7 @@
 
 /* Import fonts */
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&family=Mulish:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
 
 /* Root CSS Variables */
 :root {
@@ -63,6 +64,7 @@
   align-items: center;
   gap: 4px;
   width: 100%;
+  padding-right: 8px; /* prevent right-edge clipping of delete icon */
   border-radius: 4px;
   transition: background-color 0.2s ease;
 }
@@ -81,6 +83,7 @@
   align-items: center;
   padding: 4px 6px;
   flex: 1;
+  min-width: 0; /* allow text to shrink and show delete icon */
   background: transparent;
   border: none;
   cursor: pointer;
@@ -127,29 +130,41 @@
 
 /* Delete button for chat items */
 .chat-delete-button {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 16px;
-  color: #999;
+  color: #8a8f96; /* default icon color */
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  opacity: 0;
+  border-radius: 0px;
+  transition: color 0.15s ease, opacity 0.15s ease;
+  opacity: 0; /* hidden by default */
   flex-shrink: 0;
+  margin-right: 2px; /* avoid visual clipping on the edge */
+}
+
+.chat-delete-button svg {
+  display: block; /* avoid inline whitespace */
+  overflow: visible; /* prevent edge clipping in some renderers */
+}
+
+.chat-delete-button .material-symbols-outlined {
+  display: block;
+  line-height: 1;
+  font-size: 18px;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 .chat-history-item-container:hover .chat-delete-button {
-  opacity: 1;
+  opacity: 1; /* show on hover of row */
 }
 
 .chat-delete-button:hover {
-  background: #ff4444;
-  color: white;
+  background: transparent; /* no background on hover */
+  color: #666b72; /* slightly darker on hover */
 }
 
 .chat-history-text {
@@ -162,6 +177,71 @@
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
+}
+
+/* Modal (Confirm) */
+.ai-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100; /* above widget internals */
+}
+
+.ai-modal {
+  background: var(--background-white);
+  border-radius: 8px;
+  box-shadow: var(--shadow-main);
+  width: 420px;
+  max-width: calc(100% - 40px);
+  padding: 20px;
+}
+
+.ai-modal-message {
+  font-family: var(--font-secondary);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 140%;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+}
+
+.ai-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn {
+  font-family: var(--font-secondary);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+  background: var(--background-white);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: var(--border-light);
+}
+
+.btn-primary {
+  background: var(--primary-green);
+  border-color: var(--primary-green);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #2d4735;
 }
 
 /* Main Content Area */
@@ -519,6 +599,13 @@
   min-width: 60px;
 }
 
+.typing-indicator-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
 .typing-dots {
   display: flex;
   gap: 4px;
@@ -554,6 +641,15 @@
     transform: scale(1.2);
     opacity: 1;
   }
+}
+
+/* Thinking text (static, subtle like modern AI) */
+.thinking-text {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
 }
 
 /* Responsive Design */

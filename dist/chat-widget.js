@@ -7,6 +7,20 @@
   const API_ENDPOINT = "https://api.robethood.net/api:zwntye2i/ai_chats/website/matchi";
   const API_KEY = "KlUKmJF7-VsDg-4s7J-8Y9Q-JSybzsF3HW1YyfuPhUlGPI9qGuIdJAKwp-i5rJsH4nTjMMvjcnSmZ1ZS7euU2-xCcmm2Z5YtkN6bg2ADteKngs2-n-B1m4TestjpFO9cUmtnCig2lLxNFBMCz8cTTe1rj6F9dPPL1GK3ozXNV3_D_LMYFtZY6SIFNEmYOBAK3P8";
 
+  // Sports-themed thinking phrases (static, English)
+  const THINKING_PHRASES = [
+    "Lacing up the answer...",
+    "Reviewing the playbook...",
+    "Warming up on the sidelines...",
+    "Taking a shot on goal...",
+    "Calling an audible...",
+    "Passing the ball around...",
+    "Setting up the game plan...",
+    "Watching the replay...",
+    "In the huddle, strategizing...",
+    "Taking it to the finish line..."
+  ];
+
   function loadCSS(href) {
     if (document.getElementById(STYLE_ID)) return;
     const l = document.createElement("link");
@@ -256,9 +270,10 @@
           switchToChat(chat.id);
         });
         
-        const deleteButton = el("button", "", "×");
+        const deleteButton = el("button", "");
         deleteButton.className = "chat-delete-button";
         deleteButton.title = "Delete chat";
+        deleteButton.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">delete</span>';
         deleteButton.addEventListener("click", function(e) {
           e.stopPropagation(); // Prevent switching to chat
           deleteChatHandler(chat.id, chat.title);
@@ -290,9 +305,69 @@
       updateSidebar();
     }
     
-    function deleteChatHandler(chatId, chatTitle) {
-      // Show confirmation dialog
-      const confirmed = confirm(`Are you sure you want to delete the chat "${chatTitle}"?`);
+    // Lightweight i18n helper
+    function getLang() {
+      try {
+        const l = (document.documentElement.lang || navigator.language || 'en').toLowerCase();
+        return l.startsWith('de') ? 'de' : 'en';
+      } catch (_) { return 'en'; }
+    }
+
+    function showConfirmModal(message, confirmText, cancelText) {
+      return new Promise((resolve) => {
+        const overlay = el('div', '');
+        overlay.className = 'ai-modal-overlay';
+
+        const dialog = el('div', '');
+        dialog.className = 'ai-modal';
+
+        const content = el('p', '', message);
+        content.className = 'ai-modal-message';
+
+        const actions = el('div', '');
+        actions.className = 'ai-modal-actions';
+
+        const cancelBtn = el('button', '', cancelText);
+        cancelBtn.className = 'btn btn-secondary';
+        const confirmBtn = el('button', '', confirmText);
+        confirmBtn.className = 'btn btn-primary';
+
+        actions.appendChild(cancelBtn);
+        actions.appendChild(confirmBtn);
+        dialog.appendChild(content);
+        dialog.appendChild(actions);
+        overlay.appendChild(dialog);
+        root.appendChild(overlay);
+
+        function cleanup(result) {
+          try { overlay.remove(); } catch (_) {}
+          document.removeEventListener('keydown', onKey);
+          resolve(result);
+        }
+
+        function onKey(e) {
+          if (e.key === 'Escape') cleanup(false);
+          if (e.key === 'Enter') cleanup(true);
+        }
+        document.addEventListener('keydown', onKey);
+
+        cancelBtn.addEventListener('click', () => cleanup(false));
+        confirmBtn.addEventListener('click', () => cleanup(true));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(false); });
+
+        // focus confirm for quick Enter
+        setTimeout(() => confirmBtn.focus(), 0);
+      });
+    }
+
+    async function deleteChatHandler(chatId, chatTitle) {
+      const lang = getLang();
+      const msg = lang === 'de'
+        ? 'Bist du sicher, dass du diesen Chat löschen möchtest?'
+        : 'Are you sure you want to delete this chat?';
+      const confirmText = lang === 'de' ? 'Löschen' : 'Delete';
+      const cancelText = lang === 'de' ? 'Abbrechen' : 'Cancel';
+      const confirmed = await showConfirmModal(msg, confirmText, cancelText);
       if (!confirmed) return;
       
       const remainingChats = deleteChat(chatId);
@@ -534,11 +609,21 @@
         const messageContent = el("div", "");
         messageContent.className = "message-content";
         
+        const phrase = THINKING_PHRASES[Math.floor(Math.random() * THINKING_PHRASES.length)] || "Thinking...";
+        const thinkingText = el("div", "");
+        thinkingText.className = "thinking-text";
+        thinkingText.textContent = phrase;
+
         const bubble = el("div", "");
         bubble.className = "message-bubble typing-indicator";
         bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-        
-        messageContent.appendChild(bubble);
+
+        const indicatorContent = el("div", "");
+        indicatorContent.className = "typing-indicator-content";
+        indicatorContent.appendChild(thinkingText);
+        indicatorContent.appendChild(bubble);
+
+        messageContent.appendChild(indicatorContent);
         messageContainer.appendChild(avatar);
         messageContainer.appendChild(messageContent);
         messagesArea.appendChild(messageContainer);
@@ -647,18 +732,14 @@
       setTimeout(() => input.focus(), 0);
     }
 
-    // Initialize with search view or active chat
+    // Initialize with search view only (always start on main screen)
     let activeChat = getActiveChat();
-    if (activeChat && activeChat.messages.length > 0) {
-      createChatView(null, activeChat);
-    } else {
-      if (!activeChat) {
-        // Create a new empty chat if none exists
-        createNewChat();
-      }
-      const searchView = createSearchView();
-      mainContent.appendChild(searchView);
+    if (!activeChat) {
+      // Create a new empty chat if none exists
+      createNewChat();
     }
+    // Always show the search view on open
+    createSearchView();
     
     // Initialize sidebar
     updateSidebar();
