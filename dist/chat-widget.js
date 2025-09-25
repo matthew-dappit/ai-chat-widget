@@ -31,9 +31,7 @@
   function saveChats(chats) {
     try {
       localStorage.setItem(CHATS_STORAGE_KEY, JSON.stringify(chats));
-    } catch (_) {
-      // ignore storage write failures
-    }
+    } catch (_) {}
   }
 
   function getActiveChat() {
@@ -50,9 +48,7 @@
   function setActiveChat(chatId) {
     try {
       localStorage.setItem(ACTIVE_CHAT_KEY, chatId);
-    } catch (_) {
-      // ignore storage write failures
-    }
+    } catch (_) {}
   }
 
   function createNewChat(initialMessage = null) {
@@ -64,12 +60,12 @@
       title: initialMessage ? truncateTitle(initialMessage) : "New Chat",
       createdAt: Date.now()
     };
-    
+
     const chats = getAllChats();
-    chats.unshift(chat); // Add to beginning
+    chats.unshift(chat);
     saveChats(chats);
     setActiveChat(chatId);
-    
+
     return chat;
   }
 
@@ -77,7 +73,7 @@
     const chats = getAllChats();
     const chatIndex = chats.findIndex(chat => chat.id === chatId);
     if (chatIndex === -1) return null;
-    
+
     chats[chatIndex] = { ...chats[chatIndex], ...updates };
     saveChats(chats);
     return chats[chatIndex];
@@ -87,19 +83,16 @@
     const chats = getAllChats();
     const filteredChats = chats.filter(chat => chat.id !== chatId);
     saveChats(filteredChats);
-    
-    // If the deleted chat was active, set a new active chat
+
     const activeChat = getActiveChat();
     if (activeChat && activeChat.id === chatId) {
       if (filteredChats.length > 0) {
         setActiveChat(filteredChats[0].id);
       } else {
-        // No chats left, create a new one
         const newChat = createNewChat();
         setActiveChat(newChat.id);
       }
     }
-    
     return filteredChats.length;
   }
 
@@ -115,9 +108,9 @@
   function readState() {
     const activeChat = getActiveChat();
     if (!activeChat) return { conversation_id: null, messages: [] };
-    return { 
-      conversation_id: activeChat.conversation_id, 
-      messages: activeChat.messages 
+    return {
+      conversation_id: activeChat.conversation_id,
+      messages: activeChat.messages
     };
   }
 
@@ -166,7 +159,7 @@
     return e;
   }
 
-  // Minimal safe markdown to HTML: supports **bold** and newlines
+  // Minimal safe markdown to HTML
   function escapeHTML(str) {
     return String(str)
       .replace(/&/g, "&amp;")
@@ -178,9 +171,7 @@
 
   function markdownToHTML(str) {
     let s = escapeHTML(str);
-    // Bold: **text** (non-greedy, across lines)
     s = s.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1<\/strong>');
-    // Newlines
     s = s.replace(/\n/g, '<br>');
     return s;
   }
@@ -188,95 +179,89 @@
   function mountChat(opts) {
     if (document.getElementById("ai-chat-root")) return;
 
-    const endpointUrl = (opts && (opts.endpointUrl || opts.backendUrl)) || "";
-    const apiKey = (opts && (opts.apiKey || localStorage.getItem("ai-chat.apiKey"))) || "";
-
     // Root overlay
     const root = el(
       "div",
       `position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:2147483646;display:flex;overflow:hidden;`
     );
     root.id = "ai-chat-root";
-    // Prevent page scroll while widget is open — save previous values so we can restore on close
+
+    // Prevent page scroll while widget is open
     const _prevHtmlOverflow = document.documentElement.style.overflow;
     const _prevBodyOverflow = document.body.style.overflow;
     try {
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
     } catch (_) {}
-    
-    // State management
-    let currentView = 'search'; // 'search' or 'chat'
-    
-    // Emit helper
+
+    let currentView = 'search';
+
     function emit(name, detail) {
       try { window.dispatchEvent(new CustomEvent(name, { detail })); } catch (_) {}
     }
 
-    // Create chat history sidebar
+    // Sidebar
     const sidebar = el("div", "");
     sidebar.className = "chat-history-sidebar";
-    
+
     function updateSidebar() {
-      // Clear existing content
       sidebar.innerHTML = "";
-      
+
       const sidebarTitle = el("div", "", "Chat-Verlauf");
       sidebarTitle.className = "chat-history-title";
       sidebar.appendChild(sidebarTitle);
-      
-      // New chat button
+
       const newChatBtn = el("button", "");
-      newChatBtn.className = "chat-history-item new-chat-btn";
-      newChatBtn.innerHTML = '<span class="chat-history-text">+ New Chat</span>';
+      newChatBtn.className = "chat-history-item";
+      newChatBtn.innerHTML = '<span class="chat-history-text">New Chat</span>';
       newChatBtn.addEventListener("click", function() {
         createNewChatHandler();
       });
       sidebar.appendChild(newChatBtn);
-      
-      // Chat history items from localStorage
+
       const chats = getAllChats();
       const activeChat = getActiveChat();
-      
+
       chats.forEach(chat => {
         const item = el("div", "");
         item.className = "chat-history-item-container";
         if (activeChat && chat.id === activeChat.id) {
           item.classList.add("active");
         }
-        
+
         const chatButton = el("button", "");
         chatButton.className = "chat-history-button";
-        
+
         const itemText = el("span", "", chat.title);
         itemText.className = "chat-history-text";
         chatButton.appendChild(itemText);
-        
+
         chatButton.addEventListener("click", function() {
           switchToChat(chat.id);
         });
-        
-        const deleteButton = el("button", "", "×");
+
+        const deleteButton = el("button");
+        deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m18 9l-.84 8.398c-.127 1.273-.19 1.909-.48 2.39a2.5 2.5 0 0 1-1.075.973C15.098 21 14.46 21 13.18 21h-2.36c-1.279 0-1.918 0-2.425-.24a2.5 2.5 0 0 1-1.076-.973c-.288-.48-.352-1.116-.48-2.389L6 9m7.5 6.5v-5m-3 5v-5m-6-4h4.615m0 0l.386-2.672c.112-.486.516-.828.98-.828h3.038c.464 0 .867.342.98.828l.386 2.672m-5.77 0h5.77m0 0H19.5"/></svg>`;
         deleteButton.className = "chat-delete-button";
         deleteButton.title = "Delete chat";
         deleteButton.addEventListener("click", function(e) {
-          e.stopPropagation(); // Prevent switching to chat
+          e.stopPropagation();
           deleteChatHandler(chat.id, chat.title);
         });
-        
+
         item.appendChild(chatButton);
         item.appendChild(deleteButton);
         sidebar.appendChild(item);
       });
     }
-    
+
     function createNewChatHandler() {
       createNewChat();
       updateSidebar();
       createSearchView();
       currentView = 'search';
     }
-    
+
     function switchToChat(chatId) {
       setActiveChat(chatId);
       const chat = getActiveChat();
@@ -289,16 +274,14 @@
       }
       updateSidebar();
     }
-    
+
     function deleteChatHandler(chatId, chatTitle) {
-      // Show confirmation dialog
       const confirmed = confirm(`Are you sure you want to delete the chat "${chatTitle}"?`);
       if (!confirmed) return;
-      
-      const remainingChats = deleteChat(chatId);
+
+      const remaining = deleteChat(chatId);
       updateSidebar();
-      
-      // If we deleted the active chat, switch to search or another chat
+
       const activeChat = getActiveChat();
       if (activeChat) {
         if (activeChat.messages.length > 0) {
@@ -309,59 +292,77 @@
           currentView = 'search';
         }
       } else {
-        // No chats left, show search view
         createSearchView();
         currentView = 'search';
       }
     }
 
-    // Create main content area
+    // Main content column
     const mainContent = el("div", "");
     mainContent.className = "main-content";
 
-    // Close button
-    const closeBtn = el("button", "", "×");
-    closeBtn.className = "chat-close-button";
-    closeBtn.id = "ai-chat-close";
-    
-    // Initial search view
+    // Search view
     function createSearchView() {
-      // Clear main content first
       mainContent.innerHTML = "";
-      
+      mainContent.className = "main-content search-mode";
+
+
       const searchContainer = el("div", "");
       searchContainer.className = "search-container";
-      
-      // Main heading
+  // Remove relative positioning so close button can be absolutely positioned to the overlay
+  searchContainer.style.position = "";
+
+      // --- Add Close Button ---
+      const closeBtn = el("button", "");
+  closeBtn.className = "search-close-button";
+      closeBtn.setAttribute("aria-label", "Close chat");
+      closeBtn.innerHTML = "&times;";
+      // All styling handled by .search-close-button CSS class
+      function doClose() {
+        try {
+          document.documentElement.style.overflow = _prevHtmlOverflow || '';
+          document.body.style.overflow = _prevBodyOverflow || '';
+        } catch (_) {}
+        root.remove();
+        document.removeEventListener("keydown", handleEscape);
+        emit('ai-chat:close');
+      }
+      closeBtn.addEventListener("click", doClose);
+      function handleEscape(e) {
+        if (e.key === "Escape") doClose();
+      }
+      document.addEventListener("keydown", handleEscape);
+  // Remove any existing search close button before adding a new one
+  var searchCloseBtn = root.querySelector('.search-close-button');
+  if (searchCloseBtn) searchCloseBtn.remove();
+  root.appendChild(closeBtn);
+
       const heading = el("h1", "", "Hey, wie kann ich dir helfen?");
       heading.className = "main-heading";
-      
-      // Search section
+
       const searchSection = el("div", "");
       searchSection.className = "search-section";
-      
-      // Search input container
+
       const searchInputContainer = el("div", "");
       searchInputContainer.className = "search-input-container";
-      
+
       const searchInput = el("input", "");
       searchInput.className = "search-input";
       searchInput.type = "text";
       searchInput.placeholder = "Frag Matchi, was du willst!";
-      
+
       const submitButton = el("button", "");
       submitButton.className = "search-submit-button";
       submitButton.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M5 12L12 5L19 12M12 19V6V19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>`;
-      
+
       searchInputContainer.appendChild(searchInput);
       searchInputContainer.appendChild(submitButton);
-      
-      // FAQ buttons
+
       const faqContainer = el("div", "");
       faqContainer.className = "faq-container";
-      
+
       const faqQuestions = [
         "Wie wird meine Provision für ausbezahlt?",
         "Was ist Robethood überhaupt",
@@ -369,7 +370,7 @@
         "Was ist ein Wettexperte?",
         "Wie viel \"verdient\" ein Wettexperte?"
       ];
-      
+
       faqQuestions.forEach(question => {
         const faqBtn = el("button", "", question);
         faqBtn.className = "faq-button";
@@ -379,40 +380,33 @@
         });
         faqContainer.appendChild(faqBtn);
       });
-      
+
       searchSection.appendChild(searchInputContainer);
       searchSection.appendChild(faqContainer);
-      
+
       searchContainer.appendChild(heading);
       searchContainer.appendChild(searchSection);
-      
+
       mainContent.appendChild(searchContainer);
-      
-      // Focus search input on open
-      setTimeout(() => {
-        if (searchInput) searchInput.focus();
-      }, 0);
-      
-      // Event handlers
+
+      setTimeout(() => { if (searchInput) searchInput.focus(); }, 0);
+
       function handleSearch(query) {
         if (!query) query = searchInput.value.trim();
         if (!query) return;
-        
-        // Create new chat or use existing empty chat
+
         let activeChat = getActiveChat();
         if (!activeChat || activeChat.messages.length > 0) {
           activeChat = createNewChat();
         }
-        
-        // Update chat title based on query
+
         activeChat.title = truncateTitle(query);
         updateChat(activeChat.id, { title: activeChat.title });
-        
+
         updateSidebar();
-        // Transition to chat view - let createChatView handle adding the message and sending to AI
         createChatView(query, activeChat);
       }
-      
+
       submitButton.addEventListener("click", () => handleSearch());
       searchInput.addEventListener("keydown", function(e) {
         if (e.key === "Enter") {
@@ -420,222 +414,207 @@
           handleSearch();
         }
       });
-      
+
       return searchContainer;
     }
-    
+
     // Chat view
     function createChatView(initialQuery, chat = null) {
       currentView = 'chat';
-      
-      // Get or create active chat
+
+      // Remove search close button if present (should only show in search view)
+      var searchCloseBtn = root.querySelector('.search-close-button');
+      if (searchCloseBtn) searchCloseBtn.remove();
+
       let activeChat = chat || getActiveChat();
       if (!activeChat) {
         activeChat = createNewChat(initialQuery);
         updateSidebar();
       }
-      
-      // Clear main content
+
       mainContent.innerHTML = "";
-      
-      // Create chat interface with header
-      const chatContainer = el("div", "");
-      chatContainer.className = "chat-container";
-      
-      // Chat header
+      mainContent.className = "main-content chat-mode";
+
+      // Wrapper
+      const chatWrapper = el("div", "");
+      chatWrapper.className = "chat-wrapper";
+
+      // Header (now contains the Close button on the right)
       const chatHeader = el("div", "");
       chatHeader.className = "chat-header";
-      
+
       const headerProfile = el("div", "");
       headerProfile.className = "chat-header-profile";
-      
+
       const headerAvatar = el("div", "");
       headerAvatar.className = "chat-header-avatar";
       headerAvatar.innerHTML = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="20" cy="20" r="20" fill="#375947"/>
         <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" font-size="16">M</text>
       </svg>`;
-      
+
       const headerInfo = el("div", "");
       headerInfo.className = "chat-header-info";
-      
+
       const headerTitle = el("h3", "", "Matchi");
       headerTitle.className = "chat-header-title";
-      
+
       const headerSubtitle = el("p", "", "AI Support Assistant");
       headerSubtitle.className = "chat-header-subtitle";
-      
+
       headerInfo.appendChild(headerTitle);
       headerInfo.appendChild(headerSubtitle);
       headerProfile.appendChild(headerAvatar);
       headerProfile.appendChild(headerInfo);
+
+      // Spacer + Close button inside header
+      const headerSpacer = el("div", "");
+      headerSpacer.className = "chat-header-spacer";
+
+      const closeBtn = el("button", "");
+      closeBtn.className = "chat-close-button leave-chat-button";
+      closeBtn.id = "ai-chat-close";
+      closeBtn.setAttribute("aria-label", "Close chat");
+      closeBtn.innerHTML = "Leave Chat";
+
       chatHeader.appendChild(headerProfile);
-      
+      chatHeader.appendChild(headerSpacer);
+      chatHeader.appendChild(closeBtn);
+
+      // Chat container
+      const chatContainer = el("div", "");
+      chatContainer.className = "chat-container";
+
       // Messages area
       const messagesArea = el("div", "");
       messagesArea.className = "messages-area";
-      
+
       // Input area
       const inputArea = el("div", "");
       inputArea.className = "chat-input-area";
-      
+
       const inputContainer = el("div", "");
       inputContainer.className = "chat-input-container";
-      
+
       const input = el("input", "");
       input.className = "chat-input";
       input.type = "text";
       input.placeholder = "Schreibe deine Nachricht...";
-      
+
       const sendBtn = el("button", "");
       sendBtn.className = "chat-send-button";
       sendBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor">
         <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
       </svg>`;
-      
+
       inputContainer.appendChild(input);
       inputContainer.appendChild(sendBtn);
       inputArea.appendChild(inputContainer);
-      
-      chatContainer.appendChild(chatHeader);
+
       chatContainer.appendChild(messagesArea);
       chatContainer.appendChild(inputArea);
-      
-      mainContent.appendChild(chatContainer);
-      
+
+      chatWrapper.appendChild(chatHeader);
+      chatWrapper.appendChild(chatContainer);
+
+      mainContent.appendChild(chatWrapper);
+
       // Load existing messages
       activeChat.messages.forEach(message => {
         addMessage(message.role, message.content);
       });
-      
-      // If there's an initial query and it's not already in messages, process it
+
       if (initialQuery && !activeChat.messages.find(m => m.content === initialQuery)) {
-        // Add user message to chat
         activeChat.messages.push({ role: "user", content: initialQuery });
         updateChat(activeChat.id, { messages: activeChat.messages });
-        
-        // Add to UI and send to AI
+
         addMessage("user", initialQuery);
         sendMessageToAI(initialQuery);
       }
-      
-      // Create typing indicator
+
       function createTypingIndicator() {
         const messageContainer = el("div", "");
         messageContainer.className = "message-container assistant";
-        
-        const avatar = el("div", "");
-        avatar.className = "message-avatar";
-        avatar.innerHTML = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="20" fill="#375947"/>
-          <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" font-size="16">M</text>
-        </svg>`;
-        
+
         const messageContent = el("div", "");
         messageContent.className = "message-content";
-        
+
         const bubble = el("div", "");
         bubble.className = "message-bubble typing-indicator";
         bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-        
+
         messageContent.appendChild(bubble);
-        messageContainer.appendChild(avatar);
         messageContainer.appendChild(messageContent);
         messagesArea.appendChild(messageContainer);
         messagesArea.scrollTop = messagesArea.scrollHeight;
         return messageContainer;
       }
-      
+
       function addMessage(role, content) {
         const messageContainer = el("div", "");
         messageContainer.className = `message-container ${role}`;
-        
+
         const messageContent = el("div", "");
         messageContent.className = "message-content";
-        
+
         const bubble = el("div", "");
         bubble.className = `message-bubble ${role}`;
         bubble.innerHTML = markdownToHTML(content);
-        
+
         messageContent.appendChild(bubble);
-        
-        if (role === 'assistant') {
-          const avatar = el("div", "");
-          avatar.className = "message-avatar";
-          avatar.innerHTML = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="20" cy="20" r="20" fill="#375947"/>
-            <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" font-size="16">M</text>
-          </svg>`;
-          messageContainer.appendChild(avatar);
-          messageContainer.appendChild(messageContent);
-        } else {
-          messageContainer.appendChild(messageContent);
-        }
-        
+        messageContainer.appendChild(messageContent);
+
         messagesArea.appendChild(messageContainer);
         messagesArea.scrollTop = messagesArea.scrollHeight;
       }
-      
+
       async function sendMessageToAI(userMessage) {
-        // Show typing indicator
         const typingIndicator = createTypingIndicator();
-        
+
         try {
-          // Get current chat state
           const currentChat = getActiveChat();
           const response = await sendMessageToMatchi(
-            currentChat.conversation_id, 
+            currentChat.conversation_id,
             currentChat.messages
           );
-          
-          // Remove typing indicator
+
           typingIndicator.remove();
-          
+
           if (response && response.new_message) {
-            // Add assistant message to UI
             addMessage("assistant", response.new_message.content);
-            
-            // Update chat in storage
+
             const updatedMessages = [...currentChat.messages, response.new_message];
             updateChat(currentChat.id, {
               conversation_id: response.conversation_id,
               messages: updatedMessages
             });
-            
+
             updateSidebar();
           } else {
-            // Show error message
             addMessage("assistant", "Sorry, I'm having trouble responding right now. Please try again.");
           }
         } catch (error) {
-          // Remove typing indicator
           typingIndicator.remove();
           console.error("Error sending message:", error);
           addMessage("assistant", "Sorry, I'm having trouble responding right now. Please try again.");
         }
       }
-      
+
       function handleSend() {
         const text = input.value.trim();
         if (!text) return;
-        
-        // Add user message to UI
+
         addMessage("user", text);
         input.value = "";
-        
-        // Update chat in storage
+
         const currentChat = getActiveChat();
         const updatedMessages = [...currentChat.messages, { role: "user", content: text }];
-        updateChat(currentChat.id, {
-          messages: updatedMessages
-        });
-        
+        updateChat(currentChat.id, { messages: updatedMessages });
+
         updateSidebar();
-        
-        // Send to AI
         sendMessageToAI(text);
       }
-      
+
       sendBtn.addEventListener("click", handleSend);
       input.addEventListener("keydown", function(e) {
         if (e.key === "Enter") {
@@ -643,8 +622,24 @@
           handleSend();
         }
       });
-      
+
       setTimeout(() => input.focus(), 0);
+
+      // Close behavior
+      function doClose() {
+        try {
+          document.documentElement.style.overflow = _prevHtmlOverflow || '';
+          document.body.style.overflow = _prevBodyOverflow || '';
+        } catch (_) {}
+        root.remove();
+        document.removeEventListener("keydown", handleEscape);
+        emit('ai-chat:close');
+      }
+      closeBtn.addEventListener("click", doClose);
+      function handleEscape(e) {
+        if (e.key === "Escape") doClose();
+      }
+      document.addEventListener("keydown", handleEscape);
     }
 
     // Initialize with search view or active chat
@@ -653,39 +648,20 @@
       createChatView(null, activeChat);
     } else {
       if (!activeChat) {
-        // Create a new empty chat if none exists
         createNewChat();
       }
       const searchView = createSearchView();
       mainContent.appendChild(searchView);
     }
-    
+
     // Initialize sidebar
     updateSidebar();
-    
+
     // Compose DOM
     root.appendChild(sidebar);
     root.appendChild(mainContent);
-    root.appendChild(closeBtn);
     document.body.appendChild(root);
     emit('ai-chat:open');
-
-    // Close behavior
-    function doClose() {
-      // Restore page scroll
-      try {
-        document.documentElement.style.overflow = _prevHtmlOverflow || '';
-        document.body.style.overflow = _prevBodyOverflow || '';
-      } catch (_) {}
-      root.remove();
-      document.removeEventListener("keydown", handleEscape);
-      emit('ai-chat:close');
-    }
-    closeBtn.addEventListener("click", doClose);
-    function handleEscape(e) {
-      if (e.key === "Escape") doClose();
-    }
-    document.addEventListener("keydown", handleEscape);
 
     // Focus search input on open
     setTimeout(() => {
