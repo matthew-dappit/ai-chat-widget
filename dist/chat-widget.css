@@ -232,6 +232,7 @@
   height: 73px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 16px 24px;
   gap: 16px;
   border-bottom: 1px solid var(--border-light);
@@ -248,26 +249,13 @@
 .chat-header-title { font-family: var(--font-secondary); font-weight: 700; font-size: 16px; line-height: 125%; color: var(--text-primary); margin: 0; }
 .chat-header-subtitle { font-family: var(--font-secondary); font-weight: 400; font-size: 12px; line-height: 140%; color: var(--text-secondary); margin: 0; }
 
-/* Header spacer pushes close button to the right */
-.chat-header-spacer { flex: 1 1 auto; }
-
-/* Close button INSIDE the header (no absolute positioning) */
-.chat-close-button {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 24px;
-  line-height: 1;
-  width: 40px;
-  height: 40px;
-  color: var(--text-secondary);
-  display: inline-flex;
+/* Header actions */
+.chat-header-actions {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  transition: background 0.2s ease, color 0.2s ease;
+  gap: 12px;
+  margin-left: auto;
 }
-.chat-close-button:hover { background: #f0f0f0; color: #333; }
 
 /* Chat Container: takes remaining space (no calc vh) */
 .chat-container {
@@ -478,7 +466,7 @@
 .leave-chat-button {
   font-family: 'Mulish', sans-serif;
   font-weight: 700;
-  font-style: bold;
+  font-style: normal;
   font-size: 16px;
   line-height: 125%;
   letter-spacing: 0;
@@ -486,7 +474,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 0 24px;
+  padding: 0 20px;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
@@ -496,7 +484,8 @@
   margin-right: 0;
   vertical-align: middle;
   white-space: nowrap;
-  transition: color 0.2s;
+  box-sizing: border-box;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 .leave-chat-button:hover {
   color: #375947;

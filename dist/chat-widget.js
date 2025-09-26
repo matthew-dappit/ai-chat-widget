@@ -527,19 +527,21 @@
       headerProfile.appendChild(headerAvatar);
       headerProfile.appendChild(headerInfo);
 
-      // Spacer + Close button inside header
-      const headerSpacer = el("div", "");
-      headerSpacer.className = "chat-header-spacer";
+      // Header actions (Leave chat button, etc.)
+      const headerActions = el("div", "");
+      headerActions.className = "chat-header-actions";
 
       const closeBtn = el("button", "");
-      closeBtn.className = "chat-close-button leave-chat-button";
+      closeBtn.type = "button";
+      closeBtn.className = "leave-chat-button";
       closeBtn.id = "ai-chat-close";
       closeBtn.setAttribute("aria-label", "Close chat");
       closeBtn.innerHTML = "Leave Chat";
 
+      headerActions.appendChild(closeBtn);
+
       chatHeader.appendChild(headerProfile);
-      chatHeader.appendChild(headerSpacer);
-      chatHeader.appendChild(closeBtn);
+      chatHeader.appendChild(headerActions);
 
       // Chat container
       const chatContainer = el("div", "");
