@@ -168,7 +168,7 @@
 .chat-history-text {
   font-family: var(--font-secondary);
   font-weight: 400;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 125%;
   color: var(--text-chat-history);
   white-space: nowrap;
@@ -281,6 +281,7 @@
   width: 100%;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  scroll-behavior: smooth;
 }
 .messages-area::-webkit-scrollbar { display: none; }
 
@@ -306,7 +307,7 @@
   line-height: 1.4;
   white-space: pre-wrap;
   font-family: var(--font-secondary);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 16px;
   line-height: 140%;
 }
@@ -327,6 +328,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 0;
+  overflow-anchor: none;
 }
 
 .message-link {
@@ -382,6 +384,10 @@
   overflow: hidden;
   pointer-events: none;
   transition: max-height 0.2s ease, opacity 0.2s ease 40ms, transform 0.2s ease 40ms;
+}
+
+.message-link-list.no-transition {
+  transition: none !important;
 }
 
 .message-links[data-state="expanded"] .message-link-toggle {

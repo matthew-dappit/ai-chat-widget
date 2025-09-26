@@ -618,6 +618,60 @@
 
       const multiSourceWrappers = new Set();
 
+      function scrollToBottom({ behavior = "auto" } = {}) {
+        if (!messagesArea) return;
+        try {
+          if (typeof messagesArea.scrollTo === "function") {
+            messagesArea.scrollTo({ top: messagesArea.scrollHeight, behavior });
+            return;
+          }
+        } catch (_) {}
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+      }
+
+      function isScrolledToBottom(element, threshold = 6) {
+        if (!element) return false;
+        const distance = element.scrollHeight - (element.scrollTop + element.clientHeight);
+        return distance <= threshold;
+      }
+
+      function stickToBottomIfNeeded(shouldStick, options = {}) {
+        if (!shouldStick) return;
+
+        const {
+          behavior = "auto",
+          waitFor = null,
+          waitTimeout = 350
+        } = options;
+
+        let executed = false;
+        const runScroll = () => {
+          if (executed) return;
+          executed = true;
+          scrollToBottom({ behavior });
+        };
+
+        if (waitFor && typeof waitFor.addEventListener === "function") {
+          const handleTransitionEnd = event => {
+            if (event.target !== waitFor) return;
+            waitFor.removeEventListener("transitionend", handleTransitionEnd);
+            runScroll();
+          };
+          waitFor.addEventListener("transitionend", handleTransitionEnd);
+          if (typeof waitTimeout === "number") {
+            setTimeout(() => {
+              waitFor.removeEventListener("transitionend", handleTransitionEnd);
+              runScroll();
+            }, waitTimeout);
+          }
+          requestAnimationFrame(() => {
+            scrollToBottom({ behavior: "auto" });
+          });
+        } else {
+          requestAnimationFrame(runScroll);
+        }
+      }
+
       function cleanLinkText(link) {
         try {
           const url = new URL(link);
@@ -664,8 +718,13 @@
       }
 
       function collapseAllMultiSourceWrappers(exceptWrapper = null) {
+        const rootIsConnected = root && root.isConnected;
         multiSourceWrappers.forEach(wrapper => {
-          if (!wrapper || !wrapper.isConnected) {
+          if (!wrapper) {
+            multiSourceWrappers.delete(wrapper);
+            return;
+          }
+          if (rootIsConnected && !wrapper.isConnected) {
             multiSourceWrappers.delete(wrapper);
             return;
           }
@@ -705,6 +764,9 @@
         addMessage(message);
       });
 
+      scrollToBottom();
+      stickToBottomIfNeeded(true);
+
       if (initialQuery && !activeChat.messages.find(m => m.content === initialQuery)) {
         activeChat.messages.push({ role: "user", content: initialQuery });
         updateChat(activeChat.id, { messages: activeChat.messages });
@@ -727,7 +789,7 @@
         messageContent.appendChild(bubble);
         messageContainer.appendChild(messageContent);
         messagesArea.appendChild(messageContainer);
-        messagesArea.scrollTop = messagesArea.scrollHeight;
+        scrollToBottom();
         return messageContainer;
       }
 
@@ -805,10 +867,41 @@
               toggleButton.addEventListener("click", function(event) {
                 event.preventDefault();
                 event.stopPropagation();
-                if (linksWrapper.dataset.state === "expanded") {
+                const shouldStick = isScrolledToBottom(messagesArea);
+                const isExpanding = linksWrapper.dataset.state !== "expanded";
+                const disableTransition = shouldStick && isExpanding;
+                if (!isExpanding) {
+                  if (shouldStick) {
+                    listContainer.classList.add("no-transition");
+                  }
                   collapseMultiSourceWrapper(linksWrapper);
+                  stickToBottomIfNeeded(shouldStick);
+                  if (shouldStick) {
+                    requestAnimationFrame(() => {
+                      requestAnimationFrame(() => {
+                        listContainer.classList.remove("no-transition");
+                      });
+                    });
+                  }
                 } else {
+                  if (disableTransition) {
+                    listContainer.classList.add("no-transition");
+                  }
                   expandMultiSourceWrapper(linksWrapper);
+                  if (disableTransition) {
+                    stickToBottomIfNeeded(shouldStick);
+                    requestAnimationFrame(() => {
+                      requestAnimationFrame(() => {
+                        listContainer.classList.remove("no-transition");
+                      });
+                    });
+                  } else {
+                    stickToBottomIfNeeded(shouldStick, {
+                      waitFor: listContainer,
+                      waitTimeout: 400,
+                      behavior: "smooth"
+                    });
+                  }
                 }
               });
 
@@ -848,7 +941,7 @@
         messageContainer.appendChild(messageContent);
 
         messagesArea.appendChild(messageContainer);
-        messagesArea.scrollTop = messagesArea.scrollHeight;
+        scrollToBottom();
       }
 
       async function sendMessageToAI(userMessage) {
