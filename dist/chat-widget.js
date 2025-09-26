@@ -124,9 +124,26 @@
     }
   }
 
+  function normalizeMessagesForRequest(messages) {
+    if (!Array.isArray(messages)) return [];
+    return messages.map(message => {
+      if (!message || typeof message !== "object") return message;
+
+      const normalized = { ...message };
+      const rawContent = normalized.content;
+
+      if (rawContent && typeof rawContent === "object" && !Array.isArray(rawContent)) {
+        normalized.content = rawContent.message || "";
+      }
+
+      return normalized;
+    });
+  }
+
   // API function to send message to Matchi
   async function sendMessageToMatchi(conversationId, messageHistory) {
     try {
+      const normalizedMessages = normalizeMessagesForRequest(messageHistory);
       const response = await fetch(API_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -135,7 +152,7 @@
         },
         body: JSON.stringify({
           'conversation_id': conversationId,
-          'messages': messageHistory
+          'messages': normalizedMessages
         })
       });
 
@@ -521,14 +538,14 @@
 
       // Load existing messages
       activeChat.messages.forEach(message => {
-        addMessage(message.role, message.content);
+        addMessage(message);
       });
 
       if (initialQuery && !activeChat.messages.find(m => m.content === initialQuery)) {
         activeChat.messages.push({ role: "user", content: initialQuery });
         updateChat(activeChat.id, { messages: activeChat.messages });
 
-        addMessage("user", initialQuery);
+        addMessage({ role: "user", content: initialQuery });
         sendMessageToAI(initialQuery);
       }
 
@@ -550,7 +567,24 @@
         return messageContainer;
       }
 
-      function addMessage(role, content) {
+      function addMessage(messageOrRole, maybeContent) {
+        const message = (messageOrRole && typeof messageOrRole === "object" && !Array.isArray(messageOrRole))
+          ? messageOrRole
+          : { role: messageOrRole, content: maybeContent };
+
+        const role = message.role || "assistant";
+        const rawContent = message.content;
+
+        let displayText = "";
+        let linkList = [];
+
+        if (rawContent && typeof rawContent === "object" && !Array.isArray(rawContent)) {
+          displayText = rawContent.message || "";
+          linkList = Array.isArray(rawContent.links) ? rawContent.links : [];
+        } else {
+          displayText = rawContent == null ? "" : rawContent;
+        }
+
         const messageContainer = el("div", "");
         messageContainer.className = `message-container ${role}`;
 
@@ -559,9 +593,30 @@
 
         const bubble = el("div", "");
         bubble.className = `message-bubble ${role}`;
-        bubble.innerHTML = markdownToHTML(content);
+        bubble.innerHTML = markdownToHTML(displayText);
 
         messageContent.appendChild(bubble);
+
+        if (linkList.length > 0) {
+          const linksWrapper = el("div", "margin-top: 8px; display: flex; flex-direction: column; gap: 4px;");
+          linksWrapper.className = "message-links";
+
+          linkList.forEach(link => {
+            if (typeof link !== "string" || !link.trim()) return;
+            const linkEl = el("a", "");
+            linkEl.className = "message-link";
+            linkEl.href = link;
+            linkEl.target = "_blank";
+            linkEl.rel = "noopener noreferrer";
+            linkEl.textContent = link;
+            linksWrapper.appendChild(linkEl);
+          });
+
+          if (linksWrapper.childNodes.length > 0) {
+            messageContent.appendChild(linksWrapper);
+          }
+        }
+
         messageContainer.appendChild(messageContent);
 
         messagesArea.appendChild(messageContainer);
@@ -581,7 +636,7 @@
           typingIndicator.remove();
 
           if (response && response.new_message) {
-            addMessage("assistant", response.new_message.content);
+            addMessage(response.new_message);
 
             const updatedMessages = [...currentChat.messages, response.new_message];
             updateChat(currentChat.id, {
@@ -591,12 +646,18 @@
 
             updateSidebar();
           } else {
-            addMessage("assistant", "Sorry, I'm having trouble responding right now. Please try again.");
+            addMessage({
+              role: "assistant",
+              content: { message: "Sorry, I'm having trouble responding right now. Please try again.", links: [] }
+            });
           }
         } catch (error) {
           typingIndicator.remove();
           console.error("Error sending message:", error);
-          addMessage("assistant", "Sorry, I'm having trouble responding right now. Please try again.");
+          addMessage({
+            role: "assistant",
+            content: { message: "Sorry, I'm having trouble responding right now. Please try again.", links: [] }
+          });
         }
       }
 
@@ -604,11 +665,12 @@
         const text = input.value.trim();
         if (!text) return;
 
-        addMessage("user", text);
+        const userMessage = { role: "user", content: text };
+        addMessage(userMessage);
         input.value = "";
 
         const currentChat = getActiveChat();
-        const updatedMessages = [...currentChat.messages, { role: "user", content: text }];
+        const updatedMessages = [...currentChat.messages, userMessage];
         updateChat(currentChat.id, { messages: updatedMessages });
 
         updateSidebar();
