@@ -7,6 +7,35 @@
   const API_ENDPOINT = "https://api.robethood.net/api:zwntye2i/ai_chats/website/matchi";
   const API_KEY = "KlUKmJF7-VsDg-4s7J-8Y9Q-JSybzsF3HW1YyfuPhUlGPI9qGuIdJAKwp-i5rJsH4nTjMMvjcnSmZ1ZS7euU2-xCcmm2Z5YtkN6bg2ADteKngs2-n-B1m4TestjpFO9cUmtnCig2lLxNFBMCz8cTTe1rj6F9dPPL1GK3ozXNV3_D_LMYFtZY6SIFNEmYOBAK3P8";
 
+  const SCRIPT_BASE_URL = (() => {
+    try {
+      const currentScript = document.currentScript;
+      if (currentScript && currentScript.src) {
+        return currentScript.src;
+      }
+
+      const scripts = document.getElementsByTagName("script");
+      for (let i = scripts.length - 1; i >= 0; i -= 1) {
+        const candidate = scripts[i];
+        if (candidate && candidate.src) {
+          return candidate.src;
+        }
+      }
+    } catch (_) {}
+
+    return null;
+  })();
+
+  function resolveAssetPath(fileName) {
+    if (!SCRIPT_BASE_URL) return fileName;
+
+    try {
+      return new URL(fileName, SCRIPT_BASE_URL).toString();
+    } catch (_) {
+      return fileName;
+    }
+  }
+
   let activeSourceClickHandler = null;
 
   function loadCSS(href) {
@@ -479,12 +508,10 @@
       const headerProfile = el("div", "");
       headerProfile.className = "chat-header-profile";
 
-      const headerAvatar = el("div", "");
+      const headerAvatar = el("img");
       headerAvatar.className = "chat-header-avatar";
-      headerAvatar.innerHTML = `<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="20" cy="20" r="20" fill="#375947"/>
-        <text x="20" y="26" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" font-size="16">M</text>
-      </svg>`;
+      headerAvatar.src = resolveAssetPath("matchi-avatar.png");
+      headerAvatar.alt = "Matchi AI support avatar";
 
       const headerInfo = el("div", "");
       headerInfo.className = "chat-header-info";

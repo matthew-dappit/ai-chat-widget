@@ -243,8 +243,7 @@
 
 /* Header left: avatar + text */
 .chat-header-profile { display: flex; align-items: center; gap: 16px; }
-.chat-header-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
-.chat-header-avatar svg { width: 40px; height: 40px; }
+.chat-header-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; overflow: hidden; object-fit: cover; display: block; }
 .chat-header-info { display: flex; flex-direction: column; }
 .chat-header-title { font-family: var(--font-secondary); font-weight: 700; font-size: 16px; line-height: 125%; color: var(--text-primary); margin: 0; }
 .chat-header-subtitle { font-family: var(--font-secondary); font-weight: 400; font-size: 12px; line-height: 140%; color: var(--text-secondary); margin: 0; }
@@ -653,7 +652,6 @@
   .chat-input-area { padding: 12px 20px; }
 
   .chat-header-avatar { width: 32px; height: 32px; }
-  .chat-header-avatar svg { width: 32px; height: 32px; }
 
   .message-content { max-width: 85%; }
   .message-container.assistant .message-content { max-width: 90%; }
