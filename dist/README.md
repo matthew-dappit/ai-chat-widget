@@ -26,7 +26,7 @@ Events on `window`:
 
 The widget stores basic state in `localStorage`:
 
-- `ai-chat.chats` — Array of chats: `{ id, conversation_id, messages, title, createdAt }`
+- `ai-chat.chats` — Array of chats: `{ id, conversation_id, messages, title, createdAt }`. Each message is `{ role, content }` where `content` is either a string or, for assistant replies, an object `{ message, links }` (links is an array of URLs). The widget flattens the object to `content.message` when replaying history to the API.
 - `ai-chat.activeChat` — The active chat id
 
 This enables multi‑chat history and simple resume across page loads.
@@ -79,4 +79,3 @@ Use Git tags and pin CDN URLs to specific versions:
 ## Implementation Notes
 
 A high-level description of UI structure, state, and flows is documented in `IMPLEMENTATION_SUMMARY.md`.
-
