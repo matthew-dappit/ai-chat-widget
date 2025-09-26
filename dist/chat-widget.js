@@ -1,5 +1,9 @@
 (function () {
   const STYLE_ID = "ai-chat-widget-css";
+  const FONT_STYLESHEET_ID = "ai-chat-widget-fonts";
+  const FONT_PRECONNECT_ID = "ai-chat-widget-fonts-preconnect";
+  const FONT_PRECONNECT_STATIC_ID = "ai-chat-widget-fonts-preconnect-static";
+  const GOOGLE_FONTS_URL = "https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&family=Mulish:wght@400;700&display=swap";
   const CHATS_STORAGE_KEY = "ai-chat.chats"; // stores array of chat objects
   const ACTIVE_CHAT_KEY = "ai-chat.activeChat"; // stores active chat id
 
@@ -38,7 +42,38 @@
 
   let activeSourceClickHandler = null;
 
+  function ensureGoogleFonts() {
+    const head = document.head || document.getElementsByTagName("head")[0];
+    if (!head) return;
+
+    if (!document.getElementById(FONT_PRECONNECT_ID)) {
+      const preconnect = document.createElement("link");
+      preconnect.id = FONT_PRECONNECT_ID;
+      preconnect.rel = "preconnect";
+      preconnect.href = "https://fonts.googleapis.com";
+      head.appendChild(preconnect);
+    }
+
+    if (!document.getElementById(FONT_PRECONNECT_STATIC_ID)) {
+      const preconnectStatic = document.createElement("link");
+      preconnectStatic.id = FONT_PRECONNECT_STATIC_ID;
+      preconnectStatic.rel = "preconnect";
+      preconnectStatic.href = "https://fonts.gstatic.com";
+      preconnectStatic.crossOrigin = "";
+      head.appendChild(preconnectStatic);
+    }
+
+    if (!document.getElementById(FONT_STYLESHEET_ID)) {
+      const fontStylesheet = document.createElement("link");
+      fontStylesheet.id = FONT_STYLESHEET_ID;
+      fontStylesheet.rel = "stylesheet";
+      fontStylesheet.href = GOOGLE_FONTS_URL;
+      head.appendChild(fontStylesheet);
+    }
+  }
+
   function loadCSS(href) {
+    ensureGoogleFonts();
     if (document.getElementById(STYLE_ID)) return;
     const l = document.createElement("link");
     l.id = STYLE_ID;
