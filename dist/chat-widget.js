@@ -7,6 +7,8 @@
   const API_ENDPOINT = "https://api.robethood.net/api:zwntye2i/ai_chats/website/matchi";
   const API_KEY = "KlUKmJF7-VsDg-4s7J-8Y9Q-JSybzsF3HW1YyfuPhUlGPI9qGuIdJAKwp-i5rJsH4nTjMMvjcnSmZ1ZS7euU2-xCcmm2Z5YtkN6bg2ADteKngs2-n-B1m4TestjpFO9cUmtnCig2lLxNFBMCz8cTTe1rj6F9dPPL1GK3ozXNV3_D_LMYFtZY6SIFNEmYOBAK3P8";
 
+  let activeSourceClickHandler = null;
+
   function loadCSS(href) {
     if (document.getElementById(STYLE_ID)) return;
     const l = document.createElement("link");
@@ -320,6 +322,11 @@
 
     // Search view
     function createSearchView() {
+      if (activeSourceClickHandler) {
+        document.removeEventListener("click", activeSourceClickHandler);
+        activeSourceClickHandler = null;
+      }
+
       mainContent.innerHTML = "";
       mainContent.className = "main-content search-mode";
 
@@ -340,6 +347,10 @@
           document.documentElement.style.overflow = _prevHtmlOverflow || '';
           document.body.style.overflow = _prevBodyOverflow || '';
         } catch (_) {}
+        if (activeSourceClickHandler) {
+          document.removeEventListener("click", activeSourceClickHandler);
+          activeSourceClickHandler = null;
+        }
         root.remove();
         document.removeEventListener("keydown", handleEscape);
         emit('ai-chat:close');
@@ -443,6 +454,11 @@
       var searchCloseBtn = root.querySelector('.search-close-button');
       if (searchCloseBtn) searchCloseBtn.remove();
 
+      if (activeSourceClickHandler) {
+        document.removeEventListener("click", activeSourceClickHandler);
+        activeSourceClickHandler = null;
+      }
+
       let activeChat = chat || getActiveChat();
       if (!activeChat) {
         activeChat = createNewChat(initialQuery);
@@ -536,6 +552,90 @@
 
       mainContent.appendChild(chatWrapper);
 
+      const multiSourceWrappers = new Set();
+
+      function cleanLinkText(link) {
+        try {
+          const url = new URL(link);
+          const trimmedPath = url.pathname === "/" ? "" : url.pathname.replace(/\/$/, "");
+          const query = url.search || "";
+          return `${url.host}${trimmedPath}${query}` || url.host;
+        } catch (_) {
+          return link.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+        }
+      }
+
+      function createSourceButton(label, options = {}) {
+        const { showIcon = true } = options;
+        const button = el("button", "");
+        button.type = "button";
+        button.className = "message-link";
+
+        const textSpan = el("span", "");
+        textSpan.className = "message-link-text";
+        textSpan.textContent = label;
+        button.appendChild(textSpan);
+
+        if (showIcon) {
+          const icon = el("span", "");
+          icon.className = "material-symbols--link";
+          icon.setAttribute("aria-hidden", "true");
+          button.appendChild(icon);
+        }
+
+        return button;
+      }
+
+      function collapseMultiSourceWrapper(wrapper) {
+        if (!wrapper) return;
+        wrapper.dataset.state = "collapsed";
+        const toggleButton = wrapper.querySelector(".message-link-toggle");
+        const listContainer = wrapper.querySelector(".message-link-list");
+        if (toggleButton) {
+          toggleButton.setAttribute("aria-expanded", "false");
+        }
+        if (listContainer) {
+          listContainer.setAttribute("aria-hidden", "true");
+        }
+      }
+
+      function collapseAllMultiSourceWrappers(exceptWrapper = null) {
+        multiSourceWrappers.forEach(wrapper => {
+          if (!wrapper || !wrapper.isConnected) {
+            multiSourceWrappers.delete(wrapper);
+            return;
+          }
+          if (exceptWrapper && wrapper === exceptWrapper) return;
+          if (wrapper.dataset.state === "expanded") {
+            collapseMultiSourceWrapper(wrapper);
+          }
+        });
+      }
+
+      function expandMultiSourceWrapper(wrapper) {
+        if (!wrapper) return;
+        collapseAllMultiSourceWrappers(wrapper);
+        wrapper.dataset.state = "expanded";
+        const toggleButton = wrapper.querySelector(".message-link-toggle");
+        const listContainer = wrapper.querySelector(".message-link-list");
+        if (toggleButton) {
+          toggleButton.setAttribute("aria-expanded", "true");
+        }
+        if (listContainer) {
+          listContainer.setAttribute("aria-hidden", "false");
+        }
+      }
+
+      const handleDocumentClick = function(event) {
+        if (multiSourceWrappers.size === 0) return;
+        const wrapper = event.target.closest(".message-links");
+        if (wrapper && multiSourceWrappers.has(wrapper)) return;
+        collapseAllMultiSourceWrappers();
+      };
+
+      document.addEventListener("click", handleDocumentClick);
+      activeSourceClickHandler = handleDocumentClick;
+
       // Load existing messages
       activeChat.messages.forEach(message => {
         addMessage(message);
@@ -597,23 +697,87 @@
 
         messageContent.appendChild(bubble);
 
-        if (linkList.length > 0) {
-          const linksWrapper = el("div", "margin-top: 8px; display: flex; flex-direction: column; gap: 4px;");
-          linksWrapper.className = "message-links";
+        collapseAllMultiSourceWrappers();
 
-          linkList.forEach(link => {
-            if (typeof link !== "string" || !link.trim()) return;
-            const linkEl = el("a", "");
-            linkEl.className = "message-link";
-            linkEl.href = link;
-            linkEl.target = "_blank";
-            linkEl.rel = "noopener noreferrer";
-            linkEl.textContent = link;
-            linksWrapper.appendChild(linkEl);
+        if (linkList.length > 0) {
+          const sanitizedLinks = linkList
+            .map(link => (typeof link === "string" ? link.trim() : ""))
+            .filter(link => !!link);
+
+          const uniqueLinks = [];
+          const seenLinks = new Set();
+          sanitizedLinks.forEach(link => {
+            if (!seenLinks.has(link)) {
+              seenLinks.add(link);
+              uniqueLinks.push(link);
+            }
           });
 
-          if (linksWrapper.childNodes.length > 0) {
-            messageContent.appendChild(linksWrapper);
+          if (uniqueLinks.length > 0) {
+            const linksWrapper = el("div", "");
+            linksWrapper.className = "message-links";
+
+            if (uniqueLinks.length === 1) {
+              const singleLink = uniqueLinks[0];
+              const singleButton = createSourceButton("Source");
+              singleButton.addEventListener("click", function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                try {
+                  window.open(singleLink, "_blank", "noopener");
+                } catch (_) {
+                  window.location.href = singleLink;
+                }
+                collapseAllMultiSourceWrappers();
+              });
+              linksWrapper.appendChild(singleButton);
+            } else {
+              const listId = `message-link-list-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+              const toggleButton = createSourceButton(`Source ${uniqueLinks.length}+`);
+              toggleButton.classList.add("message-link-toggle");
+              toggleButton.setAttribute("aria-expanded", "false");
+              toggleButton.setAttribute("aria-controls", listId);
+              toggleButton.addEventListener("click", function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (linksWrapper.dataset.state === "expanded") {
+                  collapseMultiSourceWrapper(linksWrapper);
+                } else {
+                  expandMultiSourceWrapper(linksWrapper);
+                }
+              });
+
+              const listContainer = el("div", "");
+              listContainer.className = "message-link-list";
+              listContainer.id = listId;
+              listContainer.setAttribute("aria-hidden", "true");
+
+              uniqueLinks.forEach(link => {
+                const linkButton = createSourceButton(cleanLinkText(link), { showIcon: false });
+                linkButton.classList.add("message-link-url");
+                linkButton.addEventListener("click", function(event) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  try {
+                    window.open(link, "_blank", "noopener");
+                  } catch (_) {
+                    window.location.href = link;
+                  }
+                  collapseAllMultiSourceWrappers();
+                });
+                listContainer.appendChild(linkButton);
+              });
+
+              linksWrapper.appendChild(toggleButton);
+              linksWrapper.appendChild(listContainer);
+              multiSourceWrappers.add(linksWrapper);
+              collapseMultiSourceWrapper(linksWrapper);
+            }
+
+            if (linksWrapper.childNodes.length > 0) {
+              messageContent.appendChild(linksWrapper);
+            }
           }
         }
 
