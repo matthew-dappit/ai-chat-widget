@@ -1169,10 +1169,16 @@
       }
 
       function createSourceButton(label, options = {}) {
-        const { showIcon = true } = options;
+        const { showIcon = true, extraClass = "" } = options;
         const button = el("button", "");
         button.type = "button";
         button.className = "message-link";
+        if (extraClass) {
+          extraClass
+            .split(/\s+/)
+            .filter(Boolean)
+            .forEach(className => button.classList.add(className));
+        }
 
         if (showIcon) {
           const icon = el("span", "");
@@ -1282,6 +1288,60 @@
         return uniqueLinks;
       }
 
+      function uniqueSupportLinks(links) {
+        if (!Array.isArray(links)) return [];
+
+        const uniqueLinks = [];
+        const seenLinks = new Set();
+
+        links.forEach(link => {
+          if (!link || (typeof link !== "object" && typeof link !== "string")) return;
+
+          let url = "";
+          let name = "";
+          let type = "contact_form";
+
+          if (typeof link === "string") {
+            url = link.trim();
+          } else {
+            if (link.type != null) {
+              type = String(link.type).trim().toLowerCase() || "contact_form";
+            }
+
+            if (typeof link.url === "string") {
+              url = link.url.trim();
+            } else if (typeof link.href === "string") {
+              url = link.href.trim();
+            }
+
+            if (link.display_name != null) {
+              name = String(link.display_name).trim();
+            } else if (link.name != null) {
+              name = String(link.name).trim();
+            } else if (link.label != null) {
+              name = String(link.label).trim();
+            } else if (link.title != null) {
+              name = String(link.title).trim();
+            }
+          }
+
+          if (type !== "contact_form") return;
+          if (!url) return;
+
+          const dedupeKey = `${normalizeLinkKey(url)}|${type}`;
+          if (!dedupeKey || seenLinks.has(dedupeKey)) return;
+
+          seenLinks.add(dedupeKey);
+          if (!name) {
+            name = cleanLinkText(url);
+          }
+
+          uniqueLinks.push({ url, name, type });
+        });
+
+        return uniqueLinks;
+      }
+
       function createLinksWrapperFromList(linkList) {
         const uniqueLinks = uniqueSanitizedLinks(linkList);
         if (uniqueLinks.length === 0) return null;
@@ -1385,16 +1445,47 @@
         return linksWrapper;
       }
 
+      function createSupportLinksWrapper(supportList) {
+        if (!Array.isArray(supportList) || supportList.length === 0) return null;
+
+        const wrapper = el("div", "");
+        wrapper.className = "message-links support-links";
+
+        supportList.forEach(link => {
+          if (!link || typeof link !== "object") return;
+          const label = (typeof link.name === "string" && link.name.trim() !== "")
+            ? link.name.trim()
+            : cleanLinkText(link.url || "");
+          const button = createSourceButton(label, { showIcon: false, extraClass: "message-link--support" });
+          button.addEventListener("click", function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const targetUrl = link.url;
+            if (!targetUrl) return;
+            try {
+              window.open(targetUrl, "_blank", "noopener");
+            } catch (_) {
+              window.location.href = targetUrl;
+            }
+          });
+          wrapper.appendChild(button);
+        });
+
+        return wrapper;
+      }
+
       function extractMessageContent(rawContent) {
         if (rawContent && typeof rawContent === "object" && !Array.isArray(rawContent)) {
           const message = rawContent.message == null ? "" : String(rawContent.message);
           const linkSource = rawContent.knowledge_links != null ? rawContent.knowledge_links : rawContent.links;
           const links = uniqueSanitizedLinks(linkSource);
-          return { text: message, links };
+          const supportSource = rawContent.support_links != null ? rawContent.support_links : rawContent.supportLinks;
+          const supportLinks = uniqueSupportLinks(supportSource);
+          return { text: message, links, supportLinks };
         }
 
         const fallbackText = rawContent == null ? "" : String(rawContent);
-        return { text: fallbackText, links: [] };
+        return { text: fallbackText, links: [], supportLinks: [] };
       }
 
       const handleDocumentClick = function(event) {
@@ -1447,7 +1538,7 @@
           : { role: messageOrRole, content: maybeContent };
 
         const role = message.role || "assistant";
-        const { text: displayText, links: linkList } = extractMessageContent(message.content);
+        const { text: displayText, links: linkList, supportLinks } = extractMessageContent(message.content);
 
         const messageContainer = el("div", "");
         messageContainer.className = `message-container ${role}`;
@@ -1464,10 +1555,18 @@
         collapseAllMultiSourceWrappers();
 
         let linksWrapper = null;
+        let supportLinksWrapper = null;
         if (linkList.length > 0) {
           linksWrapper = createLinksWrapperFromList(linkList);
           if (linksWrapper) {
             messageContent.appendChild(linksWrapper);
+          }
+        }
+
+        if (supportLinks && supportLinks.length > 0) {
+          supportLinksWrapper = createSupportLinksWrapper(supportLinks);
+          if (supportLinksWrapper) {
+            messageContent.appendChild(supportLinksWrapper);
           }
         }
 
@@ -1478,7 +1577,7 @@
 
         function updateMessage(nextMessage, options = {}) {
           const nextRole = (nextMessage && nextMessage.role) || role || "assistant";
-          const { text: nextText, links: nextLinks } = extractMessageContent(nextMessage ? nextMessage.content : "");
+          const { text: nextText, links: nextLinks, supportLinks: nextSupportLinks } = extractMessageContent(nextMessage ? nextMessage.content : "");
           const shouldStick = options.shouldStick ?? isScrolledToBottom(messagesArea);
 
           messageContainer.className = `message-container ${nextRole}`;
@@ -1498,6 +1597,18 @@
             linksWrapper = createLinksWrapperFromList(nextLinks);
             if (linksWrapper) {
               messageContent.appendChild(linksWrapper);
+            }
+          }
+
+          if (supportLinksWrapper) {
+            supportLinksWrapper.remove();
+            supportLinksWrapper = null;
+          }
+
+          if (nextSupportLinks && nextSupportLinks.length > 0) {
+            supportLinksWrapper = createSupportLinksWrapper(nextSupportLinks);
+            if (supportLinksWrapper) {
+              messageContent.appendChild(supportLinksWrapper);
             }
           }
 
@@ -1597,7 +1708,7 @@
               message: contentParts.text,
               knowledge_links: contentParts.links,
               links: contentParts.links,
-              support_links: []
+              support_links: contentParts.supportLinks || []
             };
 
             const shouldStick = isScrolledToBottom(messagesArea);

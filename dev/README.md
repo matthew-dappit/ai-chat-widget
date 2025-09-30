@@ -52,8 +52,8 @@ To test a new widget version:
 
 1. Update the version in `dev/index.html`:
    ```javascript
-   var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.2/dist/chat-widget.js";
-   var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.2/dist/chat-widget.css";
+  var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.5/dist/chat-widget.js";
+  var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.5/dist/chat-widget.css";
    ```
 
 2. Refresh the browser (the CDN will automatically serve the new version)

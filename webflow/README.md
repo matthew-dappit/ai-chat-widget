@@ -20,8 +20,8 @@ Place the chat widget snippet near the end of the Footer block so core scripts l
 ```html
 <script>
 (function () {
-  var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.2/dist/chat-widget.js";
-  var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.2/dist/chat-widget.css";
+  var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.5/dist/chat-widget.js";
+  var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.5/dist/chat-widget.css";
   function ready(fn){/in/.test(document.readyState)?setTimeout(function(){ready(fn)},9):fn()}
   function load(src, onload){var s=document.createElement("script"); s.src=src; s.async=true; s.onload=onload; document.head.appendChild(s)}
   ready(function(){
@@ -56,4 +56,3 @@ Place the chat widget snippet near the end of the Footer block so core scripts l
 - The footer already includes Google Tag Manager noscript and SmoothScroll; keep this chat snippet after those
 - Ensure no conflicting global CSS resets affect the `#ai-chat-root` overlay
 - For ad blockers or privacy tools, ensure the chat API domain is reachable
-

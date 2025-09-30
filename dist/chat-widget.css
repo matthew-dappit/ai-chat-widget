@@ -472,6 +472,20 @@
   display: inline;
 }
 
+.message-link--support {
+  background: var(--primary-green);
+  color: #fff;
+}
+
+.message-link--support:hover {
+  background: #3b4d20;
+  color: #fff;
+}
+
+.message-link--support:focus-visible {
+  outline-color: #fff;
+}
+
 .message-link-toggle {
   align-self: flex-start;
 }
