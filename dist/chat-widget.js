@@ -8,7 +8,7 @@
   const ACTIVE_CHAT_KEY = "ai-chat.activeChat"; // stores active chat id
 
   // API Configuration
-  const API_ENDPOINT = "https://api.robethood.net/api:zwntye2i/ai_chats/website/matchi";
+  const API_ENDPOINT = "https://api.robethood.net/api:zwntye2i/dev/website/matchi";
   const API_KEY = "KlUKmJF7-VsDg-4s7J-8Y9Q-JSybzsF3HW1YyfuPhUlGPI9qGuIdJAKwp-i5rJsH4nTjMMvjcnSmZ1ZS7euU2-xCcmm2Z5YtkN6bg2ADteKngs2-n-B1m4TestjpFO9cUmtnCig2lLxNFBMCz8cTTe1rj6F9dPPL1GK3ozXNV3_D_LMYFtZY6SIFNEmYOBAK3P8";
 
   const SCRIPT_BASE_URL = (() => {
@@ -207,7 +207,9 @@
   }
 
   // API function to send message to Matchi
-  async function sendMessageToMatchi(conversationId, messageHistory) {
+  async function sendMessageToMatchi(conversationId, messageHistory, handlers = {}) {
+    const { onMessage, onDone } = handlers;
+
     try {
       const normalizedMessages = normalizeMessagesForRequest(messageHistory);
       const response = await fetch(API_ENDPOINT, {
@@ -226,11 +228,142 @@
         throw new Error(`API request failed with status ${response.status}`);
       }
 
-      const data = await response.json();
-      return data;
+      if (!response.body || typeof response.body.getReader !== "function") {
+        const data = await response.json();
+        if (onMessage) onMessage(data);
+        if (onDone) onDone(data);
+        return data;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let streamFinished = false;
+      let latestPayload = null;
+      let pendingDataLines = [];
+
+      function emitPayload(payload) {
+        latestPayload = payload;
+        if (onMessage) onMessage(payload);
+      }
+
+      function flushPendingData({ isFinalFlush = false } = {}) {
+        if (pendingDataLines.length === 0) return true;
+        const dataString = pendingDataLines.join("\n");
+        pendingDataLines = [];
+
+        const trimmedData = dataString.trim();
+        if (!trimmedData) return true;
+
+        if (trimmedData === "[DONE]") {
+          streamFinished = true;
+          if (onDone) onDone(latestPayload);
+          return true;
+        }
+
+        try {
+          const payload = JSON.parse(dataString);
+          emitPayload(payload);
+          return true;
+        } catch (error) {
+          if (isFinalFlush) {
+            console.warn("Failed to parse streamed SSE payload:", dataString);
+            return true;
+          }
+          return false;
+        }
+      }
+
+      function tryHandleLine(rawLine) {
+        const line = rawLine.replace(/\r$/, "");
+        const trimmedLine = line.trim();
+
+        if (!line || trimmedLine === "") {
+          return flushPendingData();
+        }
+
+        if (trimmedLine === "[DONE]") {
+          streamFinished = true;
+          if (onDone) onDone(latestPayload);
+          return true;
+        }
+
+        if (line.startsWith("data:")) {
+          const dataPart = line.slice(5).replace(/^\s*/, "");
+          pendingDataLines.push(dataPart);
+          return true;
+        }
+
+        if (line.startsWith("id:")) {
+          // Ignore SSE id lines; no client-side use for now
+          return true;
+        }
+
+        if (pendingDataLines.length > 0) {
+          // Unexpected non-data line while accumulating SSE data
+          const handled = flushPendingData();
+          if (!handled) return false;
+        }
+
+        try {
+          const payload = JSON.parse(trimmedLine);
+          emitPayload(payload);
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function processBuffer({ flush = false } = {}) {
+        while (true) {
+          const newlineIndex = buffer.indexOf("\n");
+          if (newlineIndex === -1) break;
+          const potentialLine = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 1);
+          if (!tryHandleLine(potentialLine)) {
+            buffer = potentialLine + "\n" + buffer;
+            break;
+          }
+          if (streamFinished) {
+            buffer = "";
+            pendingDataLines = [];
+            return;
+          }
+        }
+
+        if (flush) {
+          const remaining = buffer;
+          buffer = "";
+          if (remaining.trim().length > 0 && !tryHandleLine(remaining)) {
+            console.warn("Failed to parse streamed payload:", remaining);
+          }
+          flushPendingData({ isFinalFlush: true });
+        }
+      }
+
+      while (!streamFinished) {
+        const { done, value } = await reader.read();
+        if (value) {
+          buffer += decoder.decode(value, { stream: !done });
+          processBuffer();
+        }
+        if (done) {
+          buffer += decoder.decode();
+          processBuffer({ flush: true });
+          if (!streamFinished && onDone) {
+            onDone(latestPayload);
+          }
+          break;
+        }
+      }
+
+      return latestPayload;
 
     } catch (error) {
       console.error("Error communicating with the AI chatbot:", error);
+      if (handlers && typeof handlers.onError === "function") {
+        handlers.onError(error);
+      }
       return null;
     }
   }
@@ -749,6 +882,133 @@
         }
       }
 
+      function uniqueSanitizedLinks(links) {
+        if (!Array.isArray(links)) return [];
+        const sanitizedLinks = links
+          .map(link => (typeof link === "string" ? link.trim() : ""))
+          .filter(link => !!link);
+
+        const uniqueLinks = [];
+        const seenLinks = new Set();
+        sanitizedLinks.forEach(link => {
+          if (seenLinks.has(link)) return;
+          seenLinks.add(link);
+          uniqueLinks.push(link);
+        });
+
+        return uniqueLinks;
+      }
+
+      function createLinksWrapperFromList(linkList) {
+        const uniqueLinks = uniqueSanitizedLinks(linkList);
+        if (uniqueLinks.length === 0) return null;
+
+        const linksWrapper = el("div", "");
+        linksWrapper.className = "message-links";
+
+        if (uniqueLinks.length === 1) {
+          const singleLink = uniqueLinks[0];
+          const singleButton = createSourceButton("Source");
+          singleButton.addEventListener("click", function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            try {
+              window.open(singleLink, "_blank", "noopener");
+            } catch (_) {
+              window.location.href = singleLink;
+            }
+            collapseAllMultiSourceWrappers();
+          });
+          linksWrapper.appendChild(singleButton);
+        } else {
+          const listId = `message-link-list-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          const listContainer = el("div", "");
+          listContainer.className = "message-link-list";
+          listContainer.id = listId;
+          listContainer.setAttribute("aria-hidden", "true");
+
+          uniqueLinks.forEach(link => {
+            const linkButton = createSourceButton(cleanLinkText(link), { showIcon: false });
+            linkButton.classList.add("message-link-url");
+            linkButton.addEventListener("click", function(event) {
+              event.preventDefault();
+              event.stopPropagation();
+              try {
+                window.open(link, "_blank", "noopener");
+              } catch (_) {
+                window.location.href = link;
+              }
+              collapseAllMultiSourceWrappers();
+            });
+            listContainer.appendChild(linkButton);
+          });
+
+          const toggleButton = createSourceButton(`Source ${uniqueLinks.length}+`);
+          toggleButton.classList.add("message-link-toggle");
+          toggleButton.setAttribute("aria-expanded", "false");
+          toggleButton.setAttribute("aria-controls", listId);
+          toggleButton.addEventListener("click", function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const shouldStick = isScrolledToBottom(messagesArea);
+            const isExpanding = linksWrapper.dataset.state !== "expanded";
+            const disableTransition = shouldStick && isExpanding;
+
+            if (!isExpanding) {
+              if (shouldStick) {
+                listContainer.classList.add("no-transition");
+              }
+              collapseMultiSourceWrapper(linksWrapper);
+              stickToBottomIfNeeded(shouldStick);
+              if (shouldStick) {
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(() => {
+                    listContainer.classList.remove("no-transition");
+                  });
+                });
+              }
+            } else {
+              if (disableTransition) {
+                listContainer.classList.add("no-transition");
+              }
+              expandMultiSourceWrapper(linksWrapper);
+              if (disableTransition) {
+                stickToBottomIfNeeded(shouldStick);
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(() => {
+                    listContainer.classList.remove("no-transition");
+                  });
+                });
+              } else {
+                stickToBottomIfNeeded(shouldStick, {
+                  waitFor: listContainer,
+                  waitTimeout: 400,
+                  behavior: "smooth"
+                });
+              }
+            }
+          });
+
+          linksWrapper.appendChild(toggleButton);
+          linksWrapper.appendChild(listContainer);
+          multiSourceWrappers.add(linksWrapper);
+          collapseMultiSourceWrapper(linksWrapper);
+        }
+
+        return linksWrapper;
+      }
+
+      function extractMessageContent(rawContent) {
+        if (rawContent && typeof rawContent === "object" && !Array.isArray(rawContent)) {
+          const message = rawContent.message == null ? "" : String(rawContent.message);
+          const links = uniqueSanitizedLinks(rawContent.links);
+          return { text: message, links };
+        }
+
+        const fallbackText = rawContent == null ? "" : String(rawContent);
+        return { text: fallbackText, links: [] };
+      }
+
       const handleDocumentClick = function(event) {
         if (multiSourceWrappers.size === 0) return;
         const wrapper = event.target.closest(".message-links");
@@ -799,17 +1059,7 @@
           : { role: messageOrRole, content: maybeContent };
 
         const role = message.role || "assistant";
-        const rawContent = message.content;
-
-        let displayText = "";
-        let linkList = [];
-
-        if (rawContent && typeof rawContent === "object" && !Array.isArray(rawContent)) {
-          displayText = rawContent.message || "";
-          linkList = Array.isArray(rawContent.links) ? rawContent.links : [];
-        } else {
-          displayText = rawContent == null ? "" : rawContent;
-        }
+        const { text: displayText, links: linkList } = extractMessageContent(message.content);
 
         const messageContainer = el("div", "");
         messageContainer.className = `message-container ${role}`;
@@ -825,116 +1075,11 @@
 
         collapseAllMultiSourceWrappers();
 
+        let linksWrapper = null;
         if (linkList.length > 0) {
-          const sanitizedLinks = linkList
-            .map(link => (typeof link === "string" ? link.trim() : ""))
-            .filter(link => !!link);
-
-          const uniqueLinks = [];
-          const seenLinks = new Set();
-          sanitizedLinks.forEach(link => {
-            if (!seenLinks.has(link)) {
-              seenLinks.add(link);
-              uniqueLinks.push(link);
-            }
-          });
-
-          if (uniqueLinks.length > 0) {
-            const linksWrapper = el("div", "");
-            linksWrapper.className = "message-links";
-
-            if (uniqueLinks.length === 1) {
-              const singleLink = uniqueLinks[0];
-              const singleButton = createSourceButton("Source");
-              singleButton.addEventListener("click", function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                try {
-                  window.open(singleLink, "_blank", "noopener");
-                } catch (_) {
-                  window.location.href = singleLink;
-                }
-                collapseAllMultiSourceWrappers();
-              });
-              linksWrapper.appendChild(singleButton);
-            } else {
-              const listId = `message-link-list-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-
-              const toggleButton = createSourceButton(`Source ${uniqueLinks.length}+`);
-              toggleButton.classList.add("message-link-toggle");
-              toggleButton.setAttribute("aria-expanded", "false");
-              toggleButton.setAttribute("aria-controls", listId);
-              toggleButton.addEventListener("click", function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                const shouldStick = isScrolledToBottom(messagesArea);
-                const isExpanding = linksWrapper.dataset.state !== "expanded";
-                const disableTransition = shouldStick && isExpanding;
-                if (!isExpanding) {
-                  if (shouldStick) {
-                    listContainer.classList.add("no-transition");
-                  }
-                  collapseMultiSourceWrapper(linksWrapper);
-                  stickToBottomIfNeeded(shouldStick);
-                  if (shouldStick) {
-                    requestAnimationFrame(() => {
-                      requestAnimationFrame(() => {
-                        listContainer.classList.remove("no-transition");
-                      });
-                    });
-                  }
-                } else {
-                  if (disableTransition) {
-                    listContainer.classList.add("no-transition");
-                  }
-                  expandMultiSourceWrapper(linksWrapper);
-                  if (disableTransition) {
-                    stickToBottomIfNeeded(shouldStick);
-                    requestAnimationFrame(() => {
-                      requestAnimationFrame(() => {
-                        listContainer.classList.remove("no-transition");
-                      });
-                    });
-                  } else {
-                    stickToBottomIfNeeded(shouldStick, {
-                      waitFor: listContainer,
-                      waitTimeout: 400,
-                      behavior: "smooth"
-                    });
-                  }
-                }
-              });
-
-              const listContainer = el("div", "");
-              listContainer.className = "message-link-list";
-              listContainer.id = listId;
-              listContainer.setAttribute("aria-hidden", "true");
-
-              uniqueLinks.forEach(link => {
-                const linkButton = createSourceButton(cleanLinkText(link), { showIcon: false });
-                linkButton.classList.add("message-link-url");
-                linkButton.addEventListener("click", function(event) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  try {
-                    window.open(link, "_blank", "noopener");
-                  } catch (_) {
-                    window.location.href = link;
-                  }
-                  collapseAllMultiSourceWrappers();
-                });
-                listContainer.appendChild(linkButton);
-              });
-
-              linksWrapper.appendChild(toggleButton);
-              linksWrapper.appendChild(listContainer);
-              multiSourceWrappers.add(linksWrapper);
-              collapseMultiSourceWrapper(linksWrapper);
-            }
-
-            if (linksWrapper.childNodes.length > 0) {
-              messageContent.appendChild(linksWrapper);
-            }
+          linksWrapper = createLinksWrapperFromList(linkList);
+          if (linksWrapper) {
+            messageContent.appendChild(linksWrapper);
           }
         }
 
@@ -942,38 +1087,180 @@
 
         messagesArea.appendChild(messageContainer);
         scrollToBottom();
+
+        function updateMessage(nextMessage, options = {}) {
+          const nextRole = (nextMessage && nextMessage.role) || role || "assistant";
+          const { text: nextText, links: nextLinks } = extractMessageContent(nextMessage ? nextMessage.content : "");
+          const shouldStick = options.shouldStick ?? isScrolledToBottom(messagesArea);
+
+          messageContainer.className = `message-container ${nextRole}`;
+          bubble.className = `message-bubble ${nextRole}`;
+          bubble.innerHTML = markdownToHTML(nextText);
+
+          if (linksWrapper) {
+            if (multiSourceWrappers.has(linksWrapper)) {
+              multiSourceWrappers.delete(linksWrapper);
+            }
+            linksWrapper.remove();
+            linksWrapper = null;
+          }
+
+          if (nextLinks.length > 0) {
+            collapseAllMultiSourceWrappers();
+            linksWrapper = createLinksWrapperFromList(nextLinks);
+            if (linksWrapper) {
+              messageContent.appendChild(linksWrapper);
+            }
+          }
+
+          stickToBottomIfNeeded(shouldStick);
+        }
+
+        return {
+          container: messageContainer,
+          update: updateMessage
+        };
+      }
+
+      function normalizeAssistantChunk(payload) {
+        if (!payload || typeof payload !== "object") {
+          return null;
+        }
+
+        if (payload.new_message) {
+          const { new_message: newMessage } = payload;
+          if (!newMessage || typeof newMessage !== "object") {
+            return null;
+          }
+
+          const conversationId = payload.conversation_id ?? newMessage.conversation_id ?? null;
+          const role = newMessage.role || "assistant";
+          const content = newMessage.content != null ? newMessage.content : newMessage;
+
+          return { conversationId, role, content };
+        }
+
+        if (payload.delta) {
+          // Support potential { delta: { content: ... } } envelopes
+          return normalizeAssistantChunk(payload.delta);
+        }
+
+        if (payload.data) {
+          return normalizeAssistantChunk(payload.data);
+        }
+
+        const conversationId = payload.conversation_id ?? payload.conversationId ?? null;
+        const role = payload.role || (payload.content && payload.content.role) || "assistant";
+
+        if (payload.content != null) {
+          return { conversationId, role, content: payload.content };
+        }
+
+        if (payload.message != null || payload.links != null) {
+          return {
+            conversationId,
+            role,
+            content: {
+              message: payload.message,
+              links: payload.links || []
+            }
+          };
+        }
+
+        return { conversationId, role, content: payload };
       }
 
       async function sendMessageToAI(userMessage) {
         const typingIndicator = createTypingIndicator();
+        let typingRemoved = false;
+
+        function removeTypingIndicator() {
+          if (typingRemoved) return;
+          typingRemoved = true;
+          if (typingIndicator && typeof typingIndicator.remove === "function") {
+            typingIndicator.remove();
+          }
+        }
 
         try {
           const currentChat = getActiveChat();
-          const response = await sendMessageToMatchi(
-            currentChat.conversation_id,
-            currentChat.messages
+          if (!currentChat) {
+            removeTypingIndicator();
+            return;
+          }
+
+          const chatId = currentChat.id;
+          let messageHistory = Array.isArray(currentChat.messages) ? [...currentChat.messages] : [];
+          let latestConversationId = currentChat.conversation_id || null;
+          let assistantMessageData = null;
+          let assistantMessageRenderer = null;
+
+          const handleAssistantPayload = payload => {
+            const normalized = normalizeAssistantChunk(payload);
+            if (!normalized) return;
+
+            latestConversationId = normalized.conversationId ?? latestConversationId ?? null;
+
+            const contentParts = extractMessageContent(normalized.content);
+            const nextContent = {
+              message: contentParts.text,
+              links: contentParts.links
+            };
+
+            const shouldStick = isScrolledToBottom(messagesArea);
+            removeTypingIndicator();
+
+            if (!assistantMessageData) {
+              assistantMessageData = {
+                role: normalized.role || "assistant",
+                content: nextContent
+              };
+              messageHistory = [...messageHistory, assistantMessageData];
+              assistantMessageRenderer = addMessage(assistantMessageData);
+              if (assistantMessageRenderer && typeof assistantMessageRenderer.update === "function") {
+                assistantMessageRenderer.update(assistantMessageData, { shouldStick });
+              }
+            } else {
+              assistantMessageData.role = normalized.role || assistantMessageData.role || "assistant";
+              assistantMessageData.content = nextContent;
+              if (assistantMessageRenderer && typeof assistantMessageRenderer.update === "function") {
+                assistantMessageRenderer.update(assistantMessageData, { shouldStick });
+              }
+            }
+
+            updateChat(chatId, {
+              conversation_id: latestConversationId,
+              messages: messageHistory
+            });
+          };
+
+          await sendMessageToMatchi(
+            latestConversationId,
+            messageHistory,
+            {
+              onMessage: handleAssistantPayload,
+              onDone: () => {
+                removeTypingIndicator();
+                if (assistantMessageData) {
+                  updateSidebar();
+                }
+              },
+              onError: error => {
+                console.error("Error streaming message:", error);
+              }
+            }
           );
 
-          typingIndicator.remove();
-
-          if (response && response.new_message) {
-            addMessage(response.new_message);
-
-            const updatedMessages = [...currentChat.messages, response.new_message];
-            updateChat(currentChat.id, {
-              conversation_id: response.conversation_id,
-              messages: updatedMessages
-            });
-
-            updateSidebar();
-          } else {
+          if (!assistantMessageData) {
+            removeTypingIndicator();
             addMessage({
               role: "assistant",
               content: { message: "Sorry, I'm having trouble responding right now. Please try again.", links: [] }
             });
           }
+
         } catch (error) {
-          typingIndicator.remove();
+          removeTypingIndicator();
           console.error("Error sending message:", error);
           addMessage({
             role: "assistant",
