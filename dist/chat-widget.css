@@ -493,6 +493,7 @@
   color: #375947;
 }
 
+
 .language-toggle {
   position: relative;
   width: auto;
@@ -505,7 +506,7 @@
   font-weight: 700;
   font-size: 16px;
   line-height: 125%;
-  color: #7E848D;
+  color: #D0D3D6;
   flex: none;
   flex-grow: 0;
   z-index: 1;
@@ -517,15 +518,14 @@
   padding: 0;
   margin: 0;
   font: inherit;
-  color: inherit;
+  color: #D0D3D6;
   cursor: pointer;
   text-transform: lowercase;
-  opacity: 0.4;
-  transition: color 0.2s ease, opacity 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .language-toggle-option.is-active {
-  opacity: 1;
+  color: #7E848D;
 }
 
 .language-toggle-option:focus-visible {
@@ -534,7 +534,7 @@
 }
 
 .language-toggle-separator {
-  opacity: 0.4;
+  color: #D0D3D6;
   pointer-events: none;
 }
 
