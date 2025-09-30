@@ -178,6 +178,109 @@
   width: auto;
 }
 
+/* Delete confirmation modal */
+.chat-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 2, 4, 0.45);
+  z-index: 2147483647;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.chat-confirm-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chat-confirm-dialog {
+  width: 100%;
+  max-width: 340px;
+  background: var(--background-white);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-main);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 42px;
+  padding: 32px 0;
+}
+
+.chat-confirm-message {
+  width: 100%;
+  max-width: 340px;
+  font-family: var(--font-secondary);
+  font-weight: 600;
+  font-size: 16.7px;
+  line-height: 21px;
+  text-align: center;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0 32px;
+}
+
+.chat-confirm-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 64px;
+  width: 100%;
+  max-width: 233px;
+  margin: 0;
+}
+
+.chat-confirm-button {
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 14px 32px;
+  border-radius: 0;
+  font-family: var(--font-primary);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 125%;
+  text-align: center;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  outline: none;
+}
+
+.chat-confirm-button:focus-visible {
+  outline: 2px solid #ebad28;
+  outline-offset: 2px;
+}
+
+.chat-confirm-cancel {
+  min-width: 82px;
+  background: var(--light-background);
+  border: 1px solid var(--border-light);
+  color: var(--text-tertiary);
+}
+
+.chat-confirm-cancel:hover {
+  background: #ebe9e7;
+}
+
+.chat-confirm-confirm {
+  min-width: 87px;
+  background: var(--primary-green);
+  border: none;
+  color: #ffffff;
+}
+
+.chat-confirm-confirm:hover {
+  background: #2d4735;
+}
+
 /* Main Content Area */
 .main-content {
   flex: 1;

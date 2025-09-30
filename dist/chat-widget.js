@@ -62,6 +62,22 @@
     sourcePlural: {
       en: "Sources",
       de: "Quellen"
+    },
+    deleteChatTitle: {
+      en: "Delete chat",
+      de: "Chat löschen"
+    },
+    deleteChatPrompt: {
+      en: "Are you sure you want to permanently delete this chat?",
+      de: "Möchtest du diesen Chat dauerhaft löschen?"
+    },
+    deleteChatConfirm: {
+      en: "Delete",
+      de: "Löschen"
+    },
+    deleteChatCancel: {
+      en: "Cancel",
+      de: "Abbrechen"
     }
   };
 
@@ -510,6 +526,7 @@
     } catch (_) {}
 
     let currentView = 'search';
+    let activeConfirmDialog = null;
 
     function rerenderForLanguageChange() {
       updateSidebar();
@@ -523,6 +540,118 @@
       } else {
         createSearchView();
       }
+    }
+
+    function closeActiveConfirmDialog() {
+      if (!activeConfirmDialog) return;
+      const { overlay, keyHandler } = activeConfirmDialog;
+      overlay.classList.remove("visible");
+      setTimeout(function() {
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      }, 200);
+      if (keyHandler) {
+        document.removeEventListener("keydown", keyHandler);
+      }
+      activeConfirmDialog = null;
+    }
+
+    function showConfirmDialog(options) {
+      closeActiveConfirmDialog();
+
+      const {
+        title,
+        message,
+        confirmLabel,
+        cancelLabel,
+        onConfirm,
+        onCancel
+      } = options;
+
+      const overlay = el("div", "");
+      overlay.className = "chat-confirm-overlay";
+
+      const dialog = el("div", "");
+      dialog.className = "chat-confirm-dialog";
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+      overlay.appendChild(dialog);
+
+      if (title) {
+        dialog.setAttribute("aria-label", title);
+      }
+
+      if (message) {
+        const copy = el("p", "", message);
+        copy.className = "chat-confirm-message";
+        const messageId = "chat-confirm-message-" + Date.now();
+        copy.id = messageId;
+        dialog.appendChild(copy);
+        dialog.setAttribute("aria-describedby", messageId);
+      }
+
+      const actions = el("div", "");
+      actions.className = "chat-confirm-actions";
+
+      const cancelButton = el("button", "", cancelLabel || "Cancel");
+      cancelButton.type = "button";
+      cancelButton.className = "chat-confirm-button chat-confirm-cancel";
+
+      const confirmButton = el("button", "", confirmLabel || "Confirm");
+      confirmButton.type = "button";
+      confirmButton.className = "chat-confirm-button chat-confirm-confirm";
+
+      actions.appendChild(cancelButton);
+      actions.appendChild(confirmButton);
+      dialog.appendChild(actions);
+
+      const keyHandler = function(event) {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          if (typeof onCancel === "function") {
+            onCancel();
+          }
+          closeActiveConfirmDialog();
+        }
+      };
+
+      cancelButton.addEventListener("click", function() {
+        if (typeof onCancel === "function") {
+          onCancel();
+        }
+        closeActiveConfirmDialog();
+      });
+
+      confirmButton.addEventListener("click", function() {
+        closeActiveConfirmDialog();
+        if (typeof onConfirm === "function") {
+          onConfirm();
+        }
+      });
+
+      overlay.addEventListener("click", function(event) {
+        if (event.target === overlay) {
+          if (typeof onCancel === "function") {
+            onCancel();
+          }
+          closeActiveConfirmDialog();
+        }
+      });
+
+      document.addEventListener("keydown", keyHandler);
+
+      root.appendChild(overlay);
+
+      requestAnimationFrame(function() {
+        overlay.classList.add("visible");
+        confirmButton.focus();
+      });
+
+      activeConfirmDialog = {
+        overlay,
+        keyHandler
+      };
     }
 
     function handleLanguageChange(lang) {
@@ -631,7 +760,9 @@
         const deleteButton = el("button");
         deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m18 9l-.84 8.398c-.127 1.273-.19 1.909-.48 2.39a2.5 2.5 0 0 1-1.075.973C15.098 21 14.46 21 13.18 21h-2.36c-1.279 0-1.918 0-2.425-.24a2.5 2.5 0 0 1-1.076-.973c-.288-.48-.352-1.116-.48-2.389L6 9m7.5 6.5v-5m-3 5v-5m-6-4h4.615m0 0l.386-2.672c.112-.486.516-.828.98-.828h3.038c.464 0 .867.342.98.828l.386 2.672m-5.77 0h5.77m0 0H19.5"/></svg>`;
         deleteButton.className = "chat-delete-button";
-        deleteButton.title = "Delete chat";
+        const deleteLabel = translate("deleteChatTitle");
+        deleteButton.title = deleteLabel;
+        deleteButton.setAttribute("aria-label", deleteLabel);
         deleteButton.addEventListener("click", function(e) {
           e.stopPropagation();
           deleteChatHandler(chat.id, chat.title);
@@ -664,25 +795,30 @@
     }
 
     function deleteChatHandler(chatId, chatTitle) {
-      const confirmed = confirm(`Are you sure you want to delete the chat "${chatTitle}"?`);
-      if (!confirmed) return;
+      showConfirmDialog({
+        title: translate("deleteChatTitle"),
+        message: translate("deleteChatPrompt"),
+        confirmLabel: translate("deleteChatConfirm"),
+        cancelLabel: translate("deleteChatCancel"),
+        onConfirm: function() {
+          const remaining = deleteChat(chatId);
+          updateSidebar();
 
-      const remaining = deleteChat(chatId);
-      updateSidebar();
-
-      const activeChat = getActiveChat();
-      if (activeChat) {
-        if (activeChat.messages.length > 0) {
-          createChatView(null, activeChat);
-          currentView = 'chat';
-        } else {
-          createSearchView();
-          currentView = 'search';
+          const activeChat = getActiveChat();
+          if (activeChat) {
+            if (activeChat.messages.length > 0) {
+              createChatView(null, activeChat);
+              currentView = 'chat';
+            } else {
+              createSearchView();
+              currentView = 'search';
+            }
+          } else {
+            createSearchView();
+            currentView = 'search';
+          }
         }
-      } else {
-        createSearchView();
-        currentView = 'search';
-      }
+      });
     }
 
     // Main content column
