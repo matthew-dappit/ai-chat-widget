@@ -6,6 +6,104 @@
   const GOOGLE_FONTS_URL = "https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;700&family=Mulish:wght@400;700&display=swap";
   const CHATS_STORAGE_KEY = "ai-chat.chats"; // stores array of chat objects
   const ACTIVE_CHAT_KEY = "ai-chat.activeChat"; // stores active chat id
+  const LANGUAGE_STORAGE_KEY = "ai-chat.language";
+  const SUPPORTED_LANGUAGES = ["en", "de"];
+  const DEFAULT_LANGUAGE = "de";
+
+  const TRANSLATIONS = {
+    chatHistory: {
+      en: "Chat History",
+      de: "Chat-Verlauf"
+    },
+    newChat: {
+      en: "New Chat",
+      de: "Neuer Chat"
+    },
+    assistantSubtitle: {
+      en: "AI Support Assistant",
+      de: "AI Support Assistent"
+    },
+    leaveChat: {
+      en: "Leave Chat",
+      de: "Chat verlassen"
+    },
+    searchHeading: {
+      en: "Hey, how can I help you?",
+      de: "Hey, wie kann ich dir helfen?"
+    },
+    searchInputPlaceholder: {
+      en: "Ask Matchi anything!",
+      de: "Frag Matchi, was du willst!"
+    },
+    chatInputPlaceholder: {
+      en: "Type your message...",
+      de: "Schreibe deine Nachricht..."
+    },
+    searchSuggestions: {
+      en: [
+        "How is my commission paid out?",
+        "What exactly is Robethood?",
+        "I receive €100, what does my teammate get?",
+        "What is a betting expert?",
+        "How much does a betting expert \"earn\"?"
+      ],
+      de: [
+        "Wie wird meine Provision ausgezahlt?",
+        "Was ist Robethood überhaupt?",
+        "Ich kriege 100€, was kriegt der Mitspieler?",
+        "Was ist ein Wettexperte?",
+        "Wie viel \"verdient\" ein Wettexperte?"
+      ]
+    },
+    sourceSingular: {
+      en: "Source",
+      de: "Quelle"
+    },
+    sourcePlural: {
+      en: "Sources",
+      de: "Quellen"
+    }
+  };
+
+  function getStoredLanguage() {
+    try {
+      const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      if (stored && SUPPORTED_LANGUAGES.includes(stored)) {
+        return stored;
+      }
+    } catch (_) {}
+    return DEFAULT_LANGUAGE;
+  }
+
+  let currentLanguage = getStoredLanguage();
+
+  function storeLanguage(lang) {
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+    } catch (_) {}
+  }
+
+  function translate(key) {
+    const entry = TRANSLATIONS[key];
+    if (!entry) return key;
+    const fallback = entry[DEFAULT_LANGUAGE] != null ? entry[DEFAULT_LANGUAGE] : Object.values(entry)[0];
+    const value = entry[currentLanguage];
+    const resolved = value != null ? value : fallback;
+    if (Array.isArray(resolved)) {
+      return resolved.slice();
+    }
+    return resolved;
+  }
+
+  function getSourceLabel(count, options = {}) {
+    const { plus = false } = options;
+    const isPlural = typeof count === "number" && count !== 1;
+    const base = translate(isPlural ? "sourcePlural" : "sourceSingular");
+    if (plus && typeof count === "number") {
+      return `${base} ${count}+`;
+    }
+    return base;
+  }
 
   // API Configuration
   const API_ENDPOINT = "https://api.robethood.net/api:zwntye2i/dev/website/matchi";
@@ -123,7 +221,7 @@
       id: chatId,
       conversation_id: null,
       messages: initialMessage ? [{ role: "user", content: initialMessage }] : [],
-      title: initialMessage ? truncateTitle(initialMessage) : "New Chat",
+      title: initialMessage ? truncateTitle(initialMessage) : translate("newChat"),
       createdAt: Date.now()
     };
 
@@ -412,6 +510,77 @@
 
     let currentView = 'search';
 
+    function rerenderForLanguageChange() {
+      updateSidebar();
+      if (currentView === 'chat') {
+        const activeChat = getActiveChat();
+        if (activeChat && activeChat.messages && activeChat.messages.length > 0) {
+          createChatView(null, activeChat);
+        } else {
+          createSearchView();
+        }
+      } else {
+        createSearchView();
+      }
+    }
+
+    function handleLanguageChange(lang) {
+      if (!SUPPORTED_LANGUAGES.includes(lang) || lang === currentLanguage) {
+        return;
+      }
+      currentLanguage = lang;
+      storeLanguage(lang);
+      rerenderForLanguageChange();
+    }
+
+    function updateToggleActive(toggle) {
+      if (!toggle) return;
+      const buttons = toggle.querySelectorAll('.language-toggle-option');
+      buttons.forEach(button => {
+        const lang = button.getAttribute('data-lang');
+        const isActive = lang === currentLanguage;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    function createLanguageToggle(options = {}) {
+      const { variant = 'chat' } = options;
+      const container = el('div', '');
+      container.className = 'language-toggle';
+      if (variant === 'search') {
+        container.classList.add('language-toggle--floating');
+      }
+      container.setAttribute('role', 'group');
+      container.setAttribute('aria-label', currentLanguage === 'de' ? 'Sprachauswahl' : 'Language selection');
+
+      function createButton(langCode) {
+        const label = langCode.toLowerCase();
+        const button = el('button', '', label);
+        button.type = 'button';
+        button.className = 'language-toggle-option';
+        button.setAttribute('data-lang', langCode);
+        button.setAttribute('aria-label', langCode === 'de' ? 'Deutsch' : 'English');
+        button.addEventListener('click', function () {
+          handleLanguageChange(langCode);
+        });
+        return button;
+      }
+
+      const enButton = createButton('en');
+      const separator = el('span', '', '|');
+      separator.className = 'language-toggle-separator';
+      const deButton = createButton('de');
+
+      container.appendChild(enButton);
+      container.appendChild(separator);
+      container.appendChild(deButton);
+
+      updateToggleActive(container);
+
+      return container;
+    }
+
     function emit(name, detail) {
       try { window.dispatchEvent(new CustomEvent(name, { detail })); } catch (_) {}
     }
@@ -423,13 +592,15 @@
     function updateSidebar() {
       sidebar.innerHTML = "";
 
-      const sidebarTitle = el("div", "", "Chat-Verlauf");
+      const sidebarTitle = el("div", "", translate("chatHistory"));
       sidebarTitle.className = "chat-history-title";
       sidebar.appendChild(sidebarTitle);
 
       const newChatBtn = el("button", "");
       newChatBtn.className = "chat-history-item";
-      newChatBtn.innerHTML = '<span class="chat-history-text">New Chat</span>';
+      const newChatText = el("span", "", translate("newChat"));
+      newChatText.className = "chat-history-text";
+      newChatBtn.appendChild(newChatText);
       newChatBtn.addEventListener("click", function() {
         createNewChatHandler();
       });
@@ -530,12 +701,12 @@
 
       const searchContainer = el("div", "");
       searchContainer.className = "search-container";
-  // Remove relative positioning so close button can be absolutely positioned to the overlay
-  searchContainer.style.position = "";
+      // Remove relative positioning so close button can be absolutely positioned to the overlay
+      searchContainer.style.position = "";
 
       // --- Add Close Button ---
       const closeBtn = el("button", "");
-  closeBtn.className = "search-close-button";
+      closeBtn.className = "search-close-button";
       closeBtn.setAttribute("aria-label", "Close chat");
       closeBtn.innerHTML = "&times;";
       // All styling handled by .search-close-button CSS class
@@ -557,12 +728,16 @@
         if (e.key === "Escape") doClose();
       }
       document.addEventListener("keydown", handleEscape);
-  // Remove any existing search close button before adding a new one
-  var searchCloseBtn = root.querySelector('.search-close-button');
-  if (searchCloseBtn) searchCloseBtn.remove();
-  root.appendChild(closeBtn);
+      // Remove any existing search close button before adding a new one
+      var searchCloseBtn = root.querySelector('.search-close-button');
+      if (searchCloseBtn) searchCloseBtn.remove();
+      var existingFloatingToggle = root.querySelector('.language-toggle--floating');
+      if (existingFloatingToggle) existingFloatingToggle.remove();
+      const searchLanguageToggle = createLanguageToggle({ variant: 'search' });
+      root.appendChild(searchLanguageToggle);
+      root.appendChild(closeBtn);
 
-      const heading = el("h1", "", "Hey, wie kann ich dir helfen?");
+      const heading = el("h1", "", translate("searchHeading"));
       heading.className = "main-heading";
 
       const searchSection = el("div", "");
@@ -574,7 +749,7 @@
       const searchInput = el("input", "");
       searchInput.className = "search-input";
       searchInput.type = "text";
-      searchInput.placeholder = "Frag Matchi, was du willst!";
+      searchInput.placeholder = translate("searchInputPlaceholder");
 
       const submitButton = el("button", "");
       submitButton.className = "search-submit-button";
@@ -588,15 +763,9 @@
       const faqContainer = el("div", "");
       faqContainer.className = "faq-container";
 
-      const faqQuestions = [
-        "Wie wird meine Provision für ausbezahlt?",
-        "Was ist Robethood überhaupt",
-        "Ich kriege 100€, was kriegt der Mitspieler?",
-        "Was ist ein Wettexperte?",
-        "Wie viel \"verdient\" ein Wettexperte?"
-      ];
+      const faqQuestions = translate("searchSuggestions");
 
-      faqQuestions.forEach(question => {
+      (Array.isArray(faqQuestions) ? faqQuestions : []).forEach(question => {
         const faqBtn = el("button", "", question);
         faqBtn.className = "faq-button";
         faqBtn.addEventListener("click", function() {
@@ -650,6 +819,8 @@
       // Remove search close button if present (should only show in search view)
       var searchCloseBtn = root.querySelector('.search-close-button');
       if (searchCloseBtn) searchCloseBtn.remove();
+      var floatingToggle = root.querySelector('.language-toggle--floating');
+      if (floatingToggle) floatingToggle.remove();
 
       if (activeSourceClickHandler) {
         document.removeEventListener("click", activeSourceClickHandler);
@@ -687,7 +858,7 @@
       const headerTitle = el("h3", "", "Matchi");
       headerTitle.className = "chat-header-title";
 
-      const headerSubtitle = el("p", "", "AI Support Assistant");
+      const headerSubtitle = el("p", "", translate("assistantSubtitle"));
       headerSubtitle.className = "chat-header-subtitle";
 
       headerInfo.appendChild(headerTitle);
@@ -704,7 +875,11 @@
       closeBtn.className = "leave-chat-button";
       closeBtn.id = "ai-chat-close";
       closeBtn.setAttribute("aria-label", "Close chat");
-      closeBtn.innerHTML = "Leave Chat";
+      closeBtn.innerHTML = translate("leaveChat");
+
+      const languageToggle = createLanguageToggle({ variant: 'chat' });
+
+      headerActions.appendChild(languageToggle);
 
       headerActions.appendChild(closeBtn);
 
@@ -729,7 +904,7 @@
       const input = el("input", "");
       input.className = "chat-input";
       input.type = "text";
-      input.placeholder = "Schreibe deine Nachricht...";
+      input.placeholder = translate("chatInputPlaceholder");
 
       const sendBtn = el("button", "");
       sendBtn.className = "chat-send-button";
@@ -908,7 +1083,7 @@
 
         if (uniqueLinks.length === 1) {
           const singleLink = uniqueLinks[0];
-          const singleButton = createSourceButton("Source");
+          const singleButton = createSourceButton(getSourceLabel(1));
           singleButton.addEventListener("click", function(event) {
             event.preventDefault();
             event.stopPropagation();
@@ -943,7 +1118,7 @@
             listContainer.appendChild(linkButton);
           });
 
-          const toggleButton = createSourceButton(`Source ${uniqueLinks.length}+`);
+          const toggleButton = createSourceButton(getSourceLabel(uniqueLinks.length, { plus: true }));
           toggleButton.classList.add("message-link-toggle");
           toggleButton.setAttribute("aria-expanded", "false");
           toggleButton.setAttribute("aria-controls", listId);
