@@ -335,7 +335,8 @@
         },
         body: JSON.stringify({
           'conversation_id': conversationId,
-          'messages': normalizedMessages
+          'messages': normalizedMessages,
+          'language': currentLanguage
         })
       });
 
@@ -1128,16 +1129,50 @@
         }
       }
 
+      function normalizeLinkKey(link) {
+        if (!link) return "";
+        try {
+          const url = new URL(link);
+          const host = url.host.toLowerCase();
+          const path = url.pathname.replace(/\/$/, '').toLowerCase();
+          const query = url.search || "";
+          const hash = url.hash ? url.hash.toLowerCase() : "";
+          return `${host}${path}${query}${hash}`;
+        } catch (_) {
+          return link.trim().replace(/\/$/, '').toLowerCase();
+        }
+      }
+
+      function isRobethoodContactUrl(link) {
+        if (!link) return false;
+        try {
+          const url = new URL(link);
+          if (url.host.toLowerCase() !== "www.robethood.net") return false;
+          const path = url.pathname.replace(/\/$/, '').toLowerCase();
+          return path === "/kontakt";
+        } catch (_) {
+          const normalized = link.trim().replace(/\/$/, '').toLowerCase();
+          return normalized === "https://www.robethood.net/kontakt" || normalized === "http://www.robethood.net/kontakt";
+        }
+      }
+
+      function getKnowledgeLinkLabel(link) {
+        if (!link || typeof link !== "object") return "";
+        const { url, name } = link;
+        if (isRobethoodContactUrl(url)) {
+          return currentLanguage === "de" ? "Kontaktiere Uns" : "Contact Us";
+        }
+        if (typeof name === "string" && name.trim() !== "") {
+          return name.trim();
+        }
+        return cleanLinkText(url || "");
+      }
+
       function createSourceButton(label, options = {}) {
         const { showIcon = true } = options;
         const button = el("button", "");
         button.type = "button";
         button.className = "message-link";
-
-        const textSpan = el("span", "");
-        textSpan.className = "message-link-text";
-        textSpan.textContent = label;
-        button.appendChild(textSpan);
 
         if (showIcon) {
           const icon = el("span", "");
@@ -1145,6 +1180,11 @@
           icon.setAttribute("aria-hidden", "true");
           button.appendChild(icon);
         }
+
+        const textSpan = el("span", "");
+        textSpan.className = "message-link-text";
+        textSpan.textContent = label;
+        button.appendChild(textSpan);
 
         return button;
       }
@@ -1196,16 +1236,47 @@
 
       function uniqueSanitizedLinks(links) {
         if (!Array.isArray(links)) return [];
-        const sanitizedLinks = links
-          .map(link => (typeof link === "string" ? link.trim() : ""))
-          .filter(link => !!link);
 
         const uniqueLinks = [];
         const seenLinks = new Set();
-        sanitizedLinks.forEach(link => {
-          if (seenLinks.has(link)) return;
-          seenLinks.add(link);
-          uniqueLinks.push(link);
+
+        links.forEach(link => {
+          let url = "";
+          let name = "";
+
+          if (typeof link === "string") {
+            url = link.trim();
+          } else if (link && typeof link === "object") {
+            if (typeof link.url === "string") {
+              url = link.url.trim();
+            } else if (typeof link.href === "string") {
+              url = link.href.trim();
+            } else if (typeof link.link === "string") {
+              url = link.link.trim();
+            }
+
+            if (link.display_name != null) {
+              name = String(link.display_name).trim();
+            } else if (link.name != null) {
+              name = String(link.name).trim();
+            } else if (link.label != null) {
+              name = String(link.label).trim();
+            } else if (link.title != null) {
+              name = String(link.title).trim();
+            }
+          }
+
+          if (!url) return;
+
+          const dedupeKey = normalizeLinkKey(url);
+          if (!dedupeKey || seenLinks.has(dedupeKey)) return;
+
+          seenLinks.add(dedupeKey);
+          if (!name) {
+            name = cleanLinkText(url);
+          }
+
+          uniqueLinks.push({ url, name });
         });
 
         return uniqueLinks;
@@ -1220,14 +1291,16 @@
 
         if (uniqueLinks.length === 1) {
           const singleLink = uniqueLinks[0];
-          const singleButton = createSourceButton(getSourceLabel(1));
+          const singleLabel = getKnowledgeLinkLabel(singleLink) || getSourceLabel(1);
+          const singleButton = createSourceButton(singleLabel);
           singleButton.addEventListener("click", function(event) {
             event.preventDefault();
             event.stopPropagation();
+            const targetUrl = singleLink.url;
             try {
-              window.open(singleLink, "_blank", "noopener");
+              window.open(targetUrl, "_blank", "noopener");
             } catch (_) {
-              window.location.href = singleLink;
+              window.location.href = targetUrl;
             }
             collapseAllMultiSourceWrappers();
           });
@@ -1240,15 +1313,17 @@
           listContainer.setAttribute("aria-hidden", "true");
 
           uniqueLinks.forEach(link => {
-            const linkButton = createSourceButton(cleanLinkText(link), { showIcon: false });
+            const linkLabel = getKnowledgeLinkLabel(link) || getSourceLabel(1);
+            const linkButton = createSourceButton(linkLabel);
             linkButton.classList.add("message-link-url");
             linkButton.addEventListener("click", function(event) {
               event.preventDefault();
               event.stopPropagation();
+              const targetUrl = link.url;
               try {
-                window.open(link, "_blank", "noopener");
+                window.open(targetUrl, "_blank", "noopener");
               } catch (_) {
-                window.location.href = link;
+                window.location.href = targetUrl;
               }
               collapseAllMultiSourceWrappers();
             });
@@ -1313,7 +1388,8 @@
       function extractMessageContent(rawContent) {
         if (rawContent && typeof rawContent === "object" && !Array.isArray(rawContent)) {
           const message = rawContent.message == null ? "" : String(rawContent.message);
-          const links = uniqueSanitizedLinks(rawContent.links);
+          const linkSource = rawContent.knowledge_links != null ? rawContent.knowledge_links : rawContent.links;
+          const links = uniqueSanitizedLinks(linkSource);
           return { text: message, links };
         }
 
@@ -1468,13 +1544,16 @@
           return { conversationId, role, content: payload.content };
         }
 
-        if (payload.message != null || payload.links != null) {
+        if (payload.message != null || payload.links != null || payload.knowledge_links != null) {
+          const knowledgeLinks = payload.knowledge_links != null ? payload.knowledge_links : payload.links;
           return {
             conversationId,
             role,
             content: {
               message: payload.message,
-              links: payload.links || []
+              knowledge_links: Array.isArray(knowledgeLinks) ? knowledgeLinks : [],
+              links: Array.isArray(knowledgeLinks) ? knowledgeLinks : [],
+              support_links: Array.isArray(payload.support_links) ? payload.support_links : []
             }
           };
         }
@@ -1516,7 +1595,9 @@
             const contentParts = extractMessageContent(normalized.content);
             const nextContent = {
               message: contentParts.text,
-              links: contentParts.links
+              knowledge_links: contentParts.links,
+              links: contentParts.links,
+              support_links: []
             };
 
             const shouldStick = isScrolledToBottom(messagesArea);
@@ -1567,7 +1648,12 @@
             removeTypingIndicator();
             addMessage({
               role: "assistant",
-              content: { message: "Sorry, I'm having trouble responding right now. Please try again.", links: [] }
+              content: {
+                message: "Sorry, I'm having trouble responding right now. Please try again.",
+                knowledge_links: [],
+                links: [],
+                support_links: []
+              }
             });
           }
 
@@ -1576,7 +1662,12 @@
           console.error("Error sending message:", error);
           addMessage({
             role: "assistant",
-            content: { message: "Sorry, I'm having trouble responding right now. Please try again.", links: [] }
+            content: {
+              message: "Sorry, I'm having trouble responding right now. Please try again.",
+              knowledge_links: [],
+              links: [],
+              support_links: []
+            }
           });
         }
       }

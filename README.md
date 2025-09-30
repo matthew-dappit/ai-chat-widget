@@ -74,6 +74,16 @@ Events are emitted on `window`:
 - `ai-chat:open` — When the chat opens
 - `ai-chat:close` — When the chat is closed
 
+### Assistant Link Rendering
+
+Assistant replies can include `knowledge_links` (array of objects). The widget:
+
+- sends the currently selected `language` (`"de"` or `"en"`) with each request so the backend can localize link metadata.
+- shows each returned link as a button; the button text prefers `display_name`/`name`/`label` from the payload, falling back to the URL if none is provided.
+- treats `https://www.robethood.net/kontakt` as a special case, rendering the label as `Kontaktiere Uns` (DE) or `Contact Us` (EN).
+- keeps the link icon on the left of every button and opens each link in a new tab.
+- collapses duplicate URLs (case-insensitive, including query/fragment) so users never see repeated entries.
+
 ## Persistence
 
 The widget stores chat state in `localStorage`:
@@ -113,4 +123,3 @@ For layout and component details, see `IMPLEMENTATION_SUMMARY.md`.
 - `webflow/README.md` — How to add this to Webflow
 - `dist/README.md` — Distribution artifacts, API surface, and customization
 - `design-guide/README.md` — Design assets and usage guidance for designers
-
