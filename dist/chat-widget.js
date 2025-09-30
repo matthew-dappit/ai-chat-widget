@@ -108,6 +108,7 @@
   // API Configuration
   const API_ENDPOINT = "https://api.robethood.net/api:zwntye2i/dev/website/matchi";
   const API_KEY = "KlUKmJF7-VsDg-4s7J-8Y9Q-JSybzsF3HW1YyfuPhUlGPI9qGuIdJAKwp-i5rJsH4nTjMMvjcnSmZ1ZS7euU2-xCcmm2Z5YtkN6bg2ADteKngs2-n-B1m4TestjpFO9cUmtnCig2lLxNFBMCz8cTTe1rj6F9dPPL1GK3ozXNV3_D_LMYFtZY6SIFNEmYOBAK3P8";
+  const AVATAR_VERSION = "20240117";
 
   const SCRIPT_BASE_URL = (() => {
     try {
@@ -849,7 +850,7 @@
 
       const headerAvatar = el("img");
       headerAvatar.className = "chat-header-avatar";
-      headerAvatar.src = resolveAssetPath("matchi-avatar.png");
+      headerAvatar.src = resolveAssetPath(`matchi-avatar.png?v=${AVATAR_VERSION}`);
       headerAvatar.alt = "Matchi AI support avatar";
 
       const headerInfo = el("div", "");
