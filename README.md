@@ -32,8 +32,8 @@ The dev server serves from the repo root so `/dist` assets are available at `/di
 ```html
 <script>
 (function () {
-  var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.5/dist/chat-widget.js";
-  var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.5/dist/chat-widget.css";
+  var JS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.7/dist/chat-widget.js";
+  var CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.7/dist/chat-widget.css";
   function ready(fn){/in/.test(document.readyState)?setTimeout(function(){ready(fn)},9):fn()}
   function load(src, onload){var s=document.createElement("script"); s.src=src; s.async=true; s.onload=onload; document.head.appendChild(s)}
   ready(function(){
@@ -106,10 +106,10 @@ For layout and component details, see `IMPLEMENTATION_SUMMARY.md`.
 
 ## Releasing & CDN Versioning
 
-- Tag a release in GitHub using semver (e.g., `v0.1.5`).
+- Tag a release in GitHub using semver (e.g., `v0.1.7`).
 - jsDelivr will serve `@tag` versions from the repo, e.g.:
-  - `https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.5/dist/chat-widget.js`
-  - `https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.5/dist/chat-widget.css`
+  - `https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.7/dist/chat-widget.js`
+  - `https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.7/dist/chat-widget.css`
 - Update your Webflow footer code to pin to the desired version.
 
 ## Security Notes
