@@ -521,10 +521,42 @@
     // Prevent page scroll while widget is open
     const _prevHtmlOverflow = document.documentElement.style.overflow;
     const _prevBodyOverflow = document.body.style.overflow;
+    const _prevBodyPosition = document.body.style.position;
+    const _prevBodyTop = document.body.style.top;
+    const _prevBodyWidth = document.body.style.width;
+    const scrollY = window.scrollY || window.pageYOffset;
+    
     try {
+      // Enhanced mobile scroll prevention
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
+      // For iOS Safari: position:fixed prevents background scrolling
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
     } catch (_) {}
+    
+    // Prevent touch scroll leaking to background on mobile
+    function preventBackgroundScroll(e) {
+      const target = e.target;
+      // Allow scrolling within the chat messages area and sidebar
+      const scrollableAreas = root.querySelectorAll('.messages-area, .chat-history-sidebar, .chat-history-list');
+      let isInScrollableArea = false;
+      for (let i = 0; i < scrollableAreas.length; i++) {
+        if (scrollableAreas[i].contains(target)) {
+          isInScrollableArea = true;
+          break;
+        }
+      }
+      
+      if (!isInScrollableArea) {
+        // Prevent scrolling on non-scrollable areas
+        e.preventDefault();
+      }
+    }
+    
+    // Add touch event listener to prevent background scroll
+    root.addEventListener('touchmove', preventBackgroundScroll, { passive: false });
 
     let currentView = 'search';
     let activeConfirmDialog = null;
@@ -852,6 +884,11 @@
         try {
           document.documentElement.style.overflow = _prevHtmlOverflow || '';
           document.body.style.overflow = _prevBodyOverflow || '';
+          document.body.style.position = _prevBodyPosition || '';
+          document.body.style.top = _prevBodyTop || '';
+          document.body.style.width = _prevBodyWidth || '';
+          // Restore scroll position
+          window.scrollTo(0, scrollY);
         } catch (_) {}
         if (activeSourceClickHandler) {
           document.removeEventListener("click", activeSourceClickHandler);
@@ -1814,6 +1851,11 @@
         try {
           document.documentElement.style.overflow = _prevHtmlOverflow || '';
           document.body.style.overflow = _prevBodyOverflow || '';
+          document.body.style.position = _prevBodyPosition || '';
+          document.body.style.top = _prevBodyTop || '';
+          document.body.style.width = _prevBodyWidth || '';
+          // Restore scroll position
+          window.scrollTo(0, scrollY);
         } catch (_) {}
         root.remove();
         document.removeEventListener("keydown", handleEscape);

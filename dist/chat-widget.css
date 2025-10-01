@@ -58,6 +58,10 @@
   padding: 0 !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
+  /* Prevent mobile scroll issues */
+  touch-action: none !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 /* ====== LAYOUT GUARDS AGAINST SITE CSS ====== */
@@ -87,6 +91,9 @@
   flex-shrink: 0;
   overflow: hidden;
   box-sizing: border-box;
+  /* Allow touch scrolling within sidebar */
+  touch-action: pan-y !important;
+  overscroll-behavior: contain !important;
 }
 
 .chat-history-title {
@@ -296,6 +303,8 @@
   align-items: center; 
   justify-content: center;
   display: flex;
+  /* Prevent scrolling in search mode */
+  overflow: hidden !important;
 }
 .main-content.chat-mode { 
   align-items: stretch; 
@@ -324,6 +333,8 @@
   padding: 20px;
   box-sizing: border-box;
   transform: translateY(25vh);
+  /* Allow touch interaction for buttons/inputs */
+  touch-action: manipulation !important;
 }
 
 /* ====== Chat Header inside the pane (sticky) ====== */
@@ -386,6 +397,10 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
   scroll-behavior: smooth;
+  /* Allow vertical touch scrolling within messages */
+  touch-action: pan-y !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 .messages-area::-webkit-scrollbar { display: none; }
 
