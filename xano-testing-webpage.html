@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Robethood – Chatbot Test</title>
+  <style>
+    :root { --primary-green: #375947; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      font-family: "Mulish", system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
+    }
+    #launchChat {
+      border: 0;
+      border-radius: 999px;
+      padding: 18px 42px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #ffffff;
+      background: var(--primary-green);
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(55, 89, 71, 0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    #launchChat:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 30px rgba(55, 89, 71, 0.28);
+      background: #2d4735;
+    }
+    #launchChat:active {
+      transform: translateY(0);
+      box-shadow: 0 6px 18px rgba(55, 89, 71, 0.22);
+    }
+    #launchChat[disabled] {
+      cursor: progress;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <button id="launchChat" type="button" aria-label="Launch chatbot">Test Robethood Website Chatbot</button>
+
+  <script>
+    const JS  = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.5/dist/chat-widget.js";
+    const CSS = "https://cdn.jsdelivr.net/gh/matthew-dappit/ai-chat-widget@v0.1.5/dist/chat-widget.css";
+
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src; s.async = true;
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    function loadCSS(href) {
+      return new Promise((resolve, reject) => {
+        const l = document.createElement("link");
+        l.rel = "stylesheet"; l.href = href;
+        l.onload = resolve; l.onerror = reject;
+        document.head.appendChild(l);
+      });
+    }
+
+    async function launchChat(btn) {
+      const label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Launching…";
+
+      try {
+        await Promise.all([loadCSS(CSS), loadScript(JS)]);
+
+        if (!window.AIChatWidget || typeof window.AIChatWidget.mountChat !== "function") {
+          throw new Error("AIChatWidget not available after loading bundle");
+        }
+
+        if (typeof window.AIChatWidget.loadCSS === "function") {
+          window.AIChatWidget.loadCSS(CSS);
+        }
+
+        window.AIChatWidget.mountChat({
+          endpointUrl: "https://api.robethood.net/api:zwntye2i/ai_chats/website/matchi"
+        });
+      } catch (error) {
+        console.error("Failed to launch chat widget", error);
+        alert("Could not load the chatbot bundle (v0.1.5). Please try again.");
+        btn.disabled = false;
+        btn.textContent = label;
+        return;
+      }
+
+      window.addEventListener("ai-chat:close", () => {
+        btn.disabled = false;
+        btn.textContent = label;
+      }, { once: true });
+    }
+
+    document.getElementById("launchChat").addEventListener("click", function () {
+      launchChat(this);
+    });
+
+  </script>
+</body>
+</html>
