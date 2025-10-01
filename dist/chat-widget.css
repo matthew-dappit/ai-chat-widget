@@ -146,12 +146,12 @@
 
 /* Delete button for chat items */
 .chat-delete-button {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 18px;
   color: #999;
   display: flex;
   align-items: center;
@@ -743,9 +743,12 @@
 /* FAQ Quick Search Buttons */
 .faq-container {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
+  align-content: center;
+  padding: 0px;
   gap: 14.12px;
   width: 100%;
   max-width: 773px;
@@ -764,6 +767,7 @@
   color: var(--text-primary);
   white-space: nowrap;
   transition: all 0.2s ease;
+  flex: none;
 }
 
 .faq-button:hover {
@@ -806,6 +810,7 @@
   .search-input-container { height: 64px; }
   .search-submit-button { width: 64px; height: 64px; }
   .search-input { padding: 0 24px; }
+  
   .faq-container { gap: 10px; }
   .faq-button { font-size: 11px; padding: 6px 12px; }
 

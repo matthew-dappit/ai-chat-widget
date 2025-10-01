@@ -41,18 +41,18 @@
     },
     searchSuggestions: {
       en: [
-        "How is my commission paid out?",
-        "What exactly is Robethood?",
-        "I receive €100, what does my teammate get?",
-        "What is a betting expert?",
-        "How much does a betting expert \"earn\"?"
+        "What is Robethood exactly?",
+        "Is this legal and completely risk-free?",
+        "How does earning money actually work?",
+        "How long until I get paid out?",
+        "What are the requirements to join?"
       ],
       de: [
-        "Wie wird meine Provision ausgezahlt?",
         "Was ist Robethood überhaupt?",
-        "Ich kriege 100€, was kriegt der Mitspieler?",
-        "Was ist ein Wettexperte?",
-        "Wie viel \"verdient\" ein Wettexperte?"
+        "Ist das legal und völlig risikofrei?",
+        "Wie funktioniert das Geldverdienen genau?",
+        "Wie lange dauert die Auszahlung?",
+        "Was sind die Voraussetzungen für die Teilnahme?"
       ]
     },
     sourceSingular: {
