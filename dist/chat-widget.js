@@ -868,6 +868,79 @@
       mainContent.innerHTML = "";
       mainContent.className = "main-content search-mode";
 
+      // Create spotlight background
+      const spotlightBackground = el("div", "");
+      spotlightBackground.className = "spotlight-background";
+
+      // Create radial light element (layer 1 - bottom)
+      const radialLight = el("div", "");
+      radialLight.className = "radial-light";
+
+      // Set initial position (center of search section, not entire screen)
+      // The spotlight-background is positioned relative to the search section
+      // so we center it within that container
+      radialLight.style.left = '50%';
+      radialLight.style.top = '50vh';
+
+      // Create white padding layer (layer 2 - middle) to fill areas outside SVG
+      const whitePadding = el("div", "");
+      whitePadding.className = "white-padding";
+
+      // Create white overlay with pitch lines as holes (layer 3 - top)
+      const whiteOverlay = el("div", "");
+      whiteOverlay.className = "white-overlay";
+
+      // Add elements in correct stacking order
+      spotlightBackground.appendChild(radialLight);
+      spotlightBackground.appendChild(whitePadding);
+      spotlightBackground.appendChild(whiteOverlay);
+
+      // Add spotlight background to root (behind main content)
+      root.appendChild(spotlightBackground);
+
+      // Mouse tracking for spotlight effect
+      let mouseTrackingHandler = null;
+      let animationFrameId = null;
+
+      function handleMouseMove(e) {
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+
+        animationFrameId = requestAnimationFrame(() => {
+          // Get the sidebar element to check if it's visible
+          const sidebar = root.querySelector('.chat-history-sidebar');
+          const sidebarWidth = sidebar && window.getComputedStyle(sidebar).display !== 'none' ? 247 : 0;
+
+          // Only track mouse if it's over the search section (not the sidebar)
+          if (e.clientX >= sidebarWidth) {
+            // Adjust x position relative to the spotlight-background container
+            const x = e.clientX - sidebarWidth;
+            const y = e.clientY;
+            radialLight.style.left = x + 'px';
+            radialLight.style.top = y + 'px';
+          }
+        });
+      }
+
+      // Add mouse tracking
+      mouseTrackingHandler = handleMouseMove;
+      document.addEventListener('mousemove', mouseTrackingHandler, { passive: true });
+
+      // Store cleanup function for later removal
+      const cleanupSpotlight = function() {
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+          animationFrameId = null;
+        }
+        if (mouseTrackingHandler) {
+          document.removeEventListener('mousemove', mouseTrackingHandler);
+          mouseTrackingHandler = null;
+        }
+        if (spotlightBackground && spotlightBackground.parentNode) {
+          spotlightBackground.parentNode.removeChild(spotlightBackground);
+        }
+      };
 
       const searchContainer = el("div", "");
       searchContainer.className = "search-container";
@@ -894,6 +967,8 @@
           document.removeEventListener("click", activeSourceClickHandler);
           activeSourceClickHandler = null;
         }
+        // Clean up spotlight effect
+        cleanupSpotlight();
         root.remove();
         document.removeEventListener("keydown", handleEscape);
         emit('ai-chat:close');
@@ -972,6 +1047,8 @@
         activeChat.title = truncateTitle(query);
         updateChat(activeChat.id, { title: activeChat.title });
 
+        // Clean up spotlight effect before switching to chat view
+        cleanupSpotlight();
         updateSidebar();
         createChatView(query, activeChat);
       }

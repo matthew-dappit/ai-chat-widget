@@ -129,9 +129,14 @@ Initial Load → Search View (default)
 
 ### View Components
 
-**Search View** (`createSearchView()` ~line 710-880):
+**Search View** (`createSearchView()` ~line 867-1050):
 
 - Centered 839px container with heading, search input, FAQ buttons
+- **Spotlight Animation Effect**: Interactive pitch lines with mouse-tracking radial light
+  - Grey background layer (#FAF9F8) for pitch line visibility
+  - Yellow radial gradient light follows mouse (responsive sizing)
+  - Effect confined to search section (excludes sidebar)
+  - Cleanup on view transition to prevent memory leaks
 - Language toggle (floating top-right)
 - Close button (top-right X)
 - Transitions to chat view on submit/FAQ click

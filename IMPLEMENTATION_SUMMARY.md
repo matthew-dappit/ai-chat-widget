@@ -11,10 +11,10 @@
 
 ### 2. Initial Search Screen Implementation
 - **Exact layout matching Figma template**: Implemented the precise layout from the template
-- **Typography**: 
+- **Typography**:
   - Rajdhani font for headings (26px, 700 weight)
   - Mulish font for body text and UI elements
-- **Color scheme**: 
+- **Color scheme**:
   - Primary green: #375947
   - Background: #FFFFFF and #FAF9F8
   - Text colors: #375947, #7E848C, #7E848D
@@ -23,6 +23,14 @@
   - Main content: 839px max-width, centered
   - Search bar: 76px height with submit button
   - FAQ buttons: Proper padding and styling
+- **Spotlight Animation Effect**:
+  - Interactive pitch lines graphic with mouse-tracking radial light
+  - Grey background layer (#FAF9F8) makes pitch lines visible
+  - Yellow radial gradient light (rgba(235, 173, 40)) follows mouse cursor
+  - Responsive light sizing (scales with viewport: min(400px, 30vw))
+  - Effect confined to search section only (not sidebar)
+  - Pitch lines SVG uses cover sizing for full area coverage
+  - Smooth animation using requestAnimationFrame for performance
 
 ### 3. Chat Screen Implementation (NEW)
 - **Chat Header**: Professional header with Matchi profile avatar and title
@@ -81,13 +89,14 @@
 ### Key Components
 1. **Chat History Sidebar**: Displays previous conversations with delete functionality
 2. **Search Container**: Main centered content with heading and search (initial view)
-3. **Search Input**: Large input field with submit button
-4. **FAQ Buttons**: Quick-access buttons for common questions
-5. **Chat Header**: Professional header with Matchi avatar and title
-6. **Message Containers**: Structured layout with avatars for assistant messages
-7. **Message Bubbles**: Styled speech bubbles with proper typography
-8. **Chat Input Area**: Clean input field with send button
-9. **Close Button**: Positioned in top-right corner
+3. **Spotlight Animation**: Interactive pitch lines with mouse-tracking light effect (search view only)
+4. **Search Input**: Large input field with submit button
+5. **FAQ Buttons**: Quick-access buttons for common questions
+6. **Chat Header**: Professional header with Matchi avatar and title
+7. **Message Containers**: Structured layout with avatars for assistant messages
+8. **Message Bubbles**: Styled speech bubbles with proper typography
+9. **Chat Input Area**: Clean input field with send button
+10. **Close Button**: Positioned in top-right corner
 
 ### Interaction Flow
 1. User clicks support chat button
